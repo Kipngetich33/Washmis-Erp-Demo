@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include washmis_erp *.css
+recursive-include washmis_erp *.csv
+recursive-include washmis_erp *.html
+recursive-include washmis_erp *.ico
+recursive-include washmis_erp *.js
+recursive-include washmis_erp *.json
+recursive-include washmis_erp *.md
+recursive-include washmis_erp *.png
+recursive-include washmis_erp *.py
+recursive-include washmis_erp *.svg
+recursive-include washmis_erp *.txt
+recursive-exclude washmis_erp *.pyc
