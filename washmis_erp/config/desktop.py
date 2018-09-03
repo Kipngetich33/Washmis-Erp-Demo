@@ -7,7 +7,7 @@ def get_data():
 		{
 			"module_name": "WaSHMIS ERP",
 			"color": "#61a4cc",
-			"icon": "fa-money-bill-alt",
+			"icon": "fa fa-money",
 			"type": "module",
 			"label": _("WaSHMIS ERP")
 		}
