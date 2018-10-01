@@ -32,7 +32,7 @@ frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 	cur_frm.save();
 
 	var x=0
-	frm.doc.table_17.forEach(function(row){ 
+	frm.doc.meter_reading_sheet.forEach(function(row){ 
 		frappe.route_options = {"previous_reading":row.previous_reading,
 								"current_reading":row.readings,"consumption":row.consumption,
 								"type_of_bill":row.type_of_bill,
@@ -55,7 +55,7 @@ frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
 });
 
 
-frappe.ui.form.on("Meter Reading Sheet", "table_17", function(frm, cdt, cdn) {
+frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cdt, cdn) {
 	var z = locals[cdt][cdn];
 
 	if(z.previous_reading && z.readings) {
@@ -67,12 +67,17 @@ frappe.ui.form.on("Meter Reading Sheet", "table_17", function(frm, cdt, cdn) {
 /*function that sets the route_and_billing_period fields when a billing 
 period is chosen*/
 frappe.ui.form.on("Meter Reading Capture", "billing_period", function(frm){ 
-	cur_frm.set_value("route_and_billing_period",frm.doc.route + frm.doc.billing_period)
+	if (frm.doc.route && frm.doc.billing_period){
+		console.log(frm.doc.route, frm.doc.billing_period)
+		cur_frm.set_value("route_and_billing_period",frm.doc.route +' '+ frm.doc.billing_period)
+	}
 });
 
 /*function that sets the route_and_billing_period fields when a route is chosen*/
 frappe.ui.form.on("Meter Reading Capture", "route", function(frm){ 
-	frm.doc.route_and_billing_period=frm.doc.route + frm.doc.billing_period
+	if (frm.doc.route && frm.doc.billing_period){
+		frm.doc.route_and_billing_period=frm.doc.route +' '+ frm.doc.billing_period
+	}
 	frappe.call({
 				method: "frappe.client.get_list",
 				args: 	{
@@ -83,7 +88,7 @@ frappe.ui.form.on("Meter Reading Capture", "route", function(frm){
 				},
 
 				callback: function(r) {	
-					cur_frm.clear_table("table_17"); 
+					cur_frm.clear_table("meter_reading_sheet"); 
 					cur_frm.refresh_fields();
 					$.each(r.message || [], function(i, v){	
 						cur_frm.grids[0].grid.add_new_row(null,null,false);
@@ -92,7 +97,7 @@ frappe.ui.form.on("Meter Reading Capture", "route", function(frm){
 						var cust_naming=v.name
 					});
 
-					frm.doc.table_17.forEach(function(row){ 
+					frm.doc.meter_reading_sheet.forEach(function(row){ 
 						frappe.call({
 							method: "frappe.client.get",
 							args: {
@@ -100,7 +105,7 @@ frappe.ui.form.on("Meter Reading Capture", "route", function(frm){
 								filters: {"customer_name":row.customer_name}    
 							},
 							callback: function(r) {
-								$.each(frm.doc.table_17 || [], function(i, v) {
+								$.each(frm.doc.meter_reading_sheet || [], function(i, v) {
 									row.account_no=r.message.new_account_no
 									row.dma=r.message.dma	
 									row.meter_number=r.message.meter_serial_no
@@ -115,7 +120,7 @@ frappe.ui.form.on("Meter Reading Capture", "route", function(frm){
 									row.comments="Normal"
 									row.billing_period=frm.doc.billing_period
 									row.meter_reader=frm.doc.meter_reader
-									frm.refresh_field('table_17');
+									frm.refresh_field('meter_reading_sheet');
 								})
 							}
 						})
@@ -137,7 +142,7 @@ frappe.ui.form.on("Meter Reading Capture", "route", function(frm){
 
 //Expand current row
 //frappe.ui.form.on("Meter Reading Sheet", "customer_name", function(frm,cdt, cdn) {
-//var cur_grid =frm.get_field("table_17").grid;
+//var cur_grid =frm.get_field("meter_reading_sheet").grid;
 //var cur_doc = locals[cdt][cdn];
 //var cur_row = cur_grid.get_row(cur_doc.name);
 //cur_row.toggle_view();
