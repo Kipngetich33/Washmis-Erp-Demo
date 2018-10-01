@@ -53,7 +53,7 @@ def create_billing_period():
 			print(err)
 	#print(first_day_of_the_month, last_day_of_the_month)
 
-def demo_billing():
+def automatic_meter_reading_demo():
 	"""
 		Using Pure fresh Naivasha Ellitrack device. I am going to simulate weekly billing
 
@@ -142,10 +142,9 @@ def demo_billing():
 			except Exception as err:
 				return err
 
-			#update doc with the meter readings
-			mrs_doc = frappe.get_doc(automatic_readings_data)
-			mrs_doc.insert()
 			try:
+				#update doc with the meter readings
+				mrs_doc = frappe.get_doc(automatic_readings_data)
 				mrs_doc.insert()
 				frappe.db.commit()
 			except Exception as err:
