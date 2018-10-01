@@ -4,6 +4,7 @@ import datetime
 import pandas
 import json
 import numpy
+import calendar
 
 import sys
 
@@ -12,6 +13,45 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO
 
+def create_billing_period():
+	#first day of the month 
+	first_day_of_the_month = datetime.datetime.today().date().replace(day=1)
+
+	get_month = datetime.datetime.today().month
+	get_year = datetime.datetime.today().year
+
+	#get the last day of the month
+	last_day = calendar.monthrange(get_year, get_month)[1]
+
+	#get last date of the month
+	last_day_of_the_month = datetime.datetime.today().date().replace(day=last_day)
+
+	#create billing period
+	get_curr_month_in_text = first_day_of_the_month.strftime("%B")
+
+	#convert first and last date of the month to string
+	first_day_of_the_month = first_day_of_the_month.strftime('%Y-%m-%d')
+	last_day_of_the_month = last_day_of_the_month.strftime('%Y-%m-%d')
+
+	#billing period text
+	billing_period_name = "%s %s"%(get_curr_month_in_text, str(get_year))
+
+	bp_doc_list = frappe.get_list("Billing Period", {"billing_period": billing_period_name})
+	if not bp_doc_list:
+		data = {
+			"doctype": "Billing Period",
+			"billing_period": billing_period_name,
+			"start_date_of_billing_period": first_day_of_the_month,
+			"end_date_of_billing_period":last_day_of_the_month
+		}
+		bp_doc = frappe.get_doc(data)
+
+		try:
+			bp_doc.insert()
+			frappe.db.commit()
+		except Exception as err:
+			print(err)
+	#print(first_day_of_the_month, last_day_of_the_month)
 
 def demo_billing():
 	"""
@@ -32,7 +72,7 @@ def demo_billing():
 	period_to = yesterday.strftime("%d-%m-%Y")
 	period_to = period_to + " +23:59:59"
 
-	print(period_from, period_to)
+	#print(period_from, period_to)
 
 	#initialize request session
 	auth_url = "http://www.ellitrack.nl/auth/login/"
