@@ -65,9 +65,9 @@ def automatic_meter_reading_demo():
 	#get period dates
 	first_day_of_the_month = datetime.datetime.today().replace(day=1)
 	yesterday = datetime.datetime.now().date() - datetime.timedelta(days=1)
-	seven_days_earlier = yesterday - datetime.timedelta(days=7)
+	#seven_days_earlier = yesterday - datetime.timedelta(days=7)
 
-	period_from = seven_days_earlier.strftime("%d-%m-%Y")
+	period_from = yesterday.strftime("%d-%m-%Y")
 	period_from = period_from + ' +00:00:00'
 	period_to = yesterday.strftime("%d-%m-%Y")
 	period_to = period_to + " +23:59:59"
@@ -75,11 +75,11 @@ def automatic_meter_reading_demo():
 	#print(period_from, period_to)
 
 	#initialize request session
-	auth_url = "http://www.ellitrack.nl/auth/login/"
+	login_url = "http://www.ellitrack.nl/auth/login/"
 
 	#authenticate session
 	ellitrack_session = requests.Session()
-	ellitrack_session.post(auth_url, data={'username': "markdeblois", 'password': "upandegani"})
+	ellitrack_session.post(login_url, data={'username': "markdeblois", 'password': "upandegani"})
 
 	#get data for pure fresh ellitrack
 	data_url = "http://www.ellitrack.nl/measurement/downloadexport/serialnumber/%s/type/period/n/0" \
