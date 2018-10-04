@@ -15,9 +15,8 @@ frappe.ui.form.on('Survey Data', {
 // });
 
 // function that returns to task on save 
-frappe.ui.form.on("Survey Data", { after_save: function(frm){
-	console.log("returning")
-	frappe.route_options = {"Priority":"High"}
-	frappe.set_route("Form", "Task","TASK-2018-00030")
-}});
+// frappe.ui.form.on("Survey Data", { after_save: function(frm){
+// 	console.log("returning")
+// 	frappe.set_route("Form", "Task","TASK-2018-00032")
+// }});
 
