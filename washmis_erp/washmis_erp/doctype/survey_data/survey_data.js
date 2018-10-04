@@ -3,8 +3,6 @@
 
 frappe.ui.form.on('Survey Data', {
 	refresh: function(frm) {
-		
-
 	}
 });
 
