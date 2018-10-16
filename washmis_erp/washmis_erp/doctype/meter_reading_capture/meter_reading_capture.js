@@ -4,14 +4,14 @@
 
 /*function that acts when the readings field under meter reading sheet is
 filled*/
-frappe.ui.form.on("Meter Reading Sheet", "readings", function(frm, cdt, cdn) {
+frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
-	if(d.readings){
+	if(d.current_manual_readings){
 		if(d.estimated_consumption){
 			// do nothing for now 
 		}
 		else{
-			frappe.model.set_value(cdt, cdn, "consumption", (d.readings - d.previous_reading));
+			frappe.model.set_value(cdt, cdn, "manual_consumption", (d.current_manual_readings - d.previous_manual_reading));
 		}
 	}
 });
@@ -21,8 +21,8 @@ frappe.ui.form.on("Meter Reading Sheet", "readings", function(frm, cdt, cdn) {
 filled*/
 frappe.ui.form.on("Meter Reading Sheet", "estimated_consumption", function(frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
-	frappe.model.set_value(cdt, cdn, "consumption", d.estimated_consumption);
-	frappe.model.set_value(cdt, cdn, "readings", );
+	frappe.model.set_value(cdt, cdn, "manual_consumption", d.estimated_consumption);
+	frappe.model.set_value(cdt, cdn, "current_manual_readings", );
 });
 
 
@@ -33,8 +33,8 @@ frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 
 	var x=0
 	frm.doc.meter_reading_sheet.forEach(function(row){ 
-		frappe.route_options = {"previous_reading":row.previous_reading,
-								"current_reading":row.readings,"consumption":row.consumption,
+		frappe.route_options = {"previous_reading":row.previous_manual_reading,
+								"current_reading": row.current_manual_readings,"consumption":row.manual_consumption,
 								"type_of_bill":row.type_of_bill,
 								"billing_period":frm.doc.billing_period,"type_of_invoice":"bill",
 								"customer":row.customer_name
@@ -58,9 +58,9 @@ frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
 frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cdt, cdn) {
 	var z = locals[cdt][cdn];
 
-	if(z.previous_reading && z.readings) {
-		consumption = frappe.consumed_quantity.get_diff(z.readings, z.previous_reading);
-		frappe.model.set_value(cdt, cdn, "consumption", consumption);
+	if(z.previous_manual_reading && z.current_manual_readings) {
+		manual_consumption = frappe.consumed_quantity.get_diff(z.current_manual_readings, z.previous_manual_reading);
+		frappe.model.set_value(cdt, cdn, "manual_consumption", manual_consumption);
 	}
 });
 
@@ -156,7 +156,7 @@ frappe.ui.form.on("Meter Reading Capture", "refresh", function(frm) {
 	cur_frm.set_query("route", function() {
 		return {
 			"filters": {
-				"type": "route"
+				"type_of_territory": "route"
 			}
 		}
 	});
@@ -164,7 +164,7 @@ frappe.ui.form.on("Meter Reading Capture", "refresh", function(frm) {
 
 
 /*function that set type of bill as either actual or estimated*/
-frappe.ui.form.on("Meter Reading Sheet", "readings", function(frm, cdt, cdn) {
+frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	frappe.model.set_value(cdt, cdn, "type_of_bill", "Actual");
 });
