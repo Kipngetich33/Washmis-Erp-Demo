@@ -30,10 +30,12 @@ var tabletransfer = frappe.model.get_doc("Meter Reading Capture", routeandperiod
         $.each(tabletransfer.table_17, function(index, row)
 {
 if (row.dma==frm.doc.dma){
-billed_consumption = (billed_consumption * 1) + (row.consumption *1)
+billed_consumption = (billed_consumption * 1) + (row.manual_consumption *1)
 }
    });
 frm.set_value("billed_water",billed_consumption);
+frm.set_value("billed_water",20);
+
 
    })
 }
