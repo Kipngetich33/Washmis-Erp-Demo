@@ -1,6 +1,120 @@
 // Copyright (c) 2018, Paul Karugu and contributors
 // For license information, please see license.txt
 
+// ================================================================================================
+/* This section contains code from the general functions section
+which are called is the form triggered functions section*/
+
+// function that makes the field passed as a parameter readonly
+function make_field_readonly(given_field){
+	cur_frm.set_df_property(given_field,"read_only", 1);
+}
+
+
+// function that alerts a message provided to it as parameter
+function alert_message(message_to_print){
+	msgprint(message_to_print)
+}
+
+
+// function that filter the route to be selected from territory
+function filter_territoty(){
+	cur_frm.set_query("route", function() {
+		return {
+			"filters": {
+				"type_of_territory": "route"
+			}
+		}
+	});
+}
+
+/*function that sets the route_and_billing_period fields when a billing 
+period is chosen*/
+function set_route_and_billing_period(){
+	// when then billing period field is clicked
+	frappe.ui.form.on("Meter Reading Capture", "billing_period", function(frm){ 
+		if (frm.doc.route && frm.doc.billing_period){
+			console.log(frm.doc.route, frm.doc.billing_period)
+			cur_frm.set_value("route_and_billing_period",frm.doc.route +' '+ frm.doc.billing_period)
+
+			// add customers in that route to the meter reading sheet
+			get_customers_by_route()
+		}
+	});
+	
+	// when the route field is clicked
+	frappe.ui.form.on("Meter Reading Capture", "route", function(frm){ 
+		if (frm.doc.route && frm.doc.billing_period){
+			frm.doc.route_and_billing_period=frm.doc.route +' '+ frm.doc.billing_period
+			
+			// add customers in that route to the meter reading sheet
+			get_customers_by_route()
+		}
+	});
+}
+
+// function that add customer in a given route and billing period
+function get_customers_by_route(){
+
+	// get customers from a specific route
+	frappe.call({
+		method: "frappe.client.get_list",
+		args: 	{
+				doctype: "Customer",
+				filters: {
+					'route':cur_frm.doc.route,
+				},
+		fields:"system_no"
+				
+		},
+
+		callback: function(r) {	
+			cur_frm.clear_table("meter_reading_sheet"); 
+			cur_frm.refresh_fields();
+			$.each(r.message || [], function(i, v){	
+				cur_frm.grids[0].grid.add_new_row(null,null,false);
+				var newrow = cur_frm.grids[0].grid.grid_rows[cur_frm.grids[0].grid.grid_rows.length - 1].doc;
+				newrow.system_no = v.system_no
+			});
+
+			cur_frm.doc.meter_reading_sheet.forEach(function(row){ 
+				frappe.call({
+					method: "frappe.client.get",
+					args: {
+						doctype: "Customer",
+						filters: {"system_no":row.system_no}    
+					},
+					callback: function(r) {
+						$.each(cur_frm.doc.meter_reading_sheet || [], function(i, v) {
+							row.customer_name = r.message.customer_name
+							row.account_no=r.message.new_account_no
+							row.dma=r.message.dma	
+							row.meter_number=r.message.meter_serial_no
+							row.previous_reading=r.message.initial_reading
+							row.walk_no=r.message.walk_no	
+							row.reading_date=cur_frm.doc.reading_date
+							row.tel_no=r.message.tel_no
+							row.balance_bf=r.message.outstanding_balances
+							row.bill_category="Periodical"
+							row.type_of_bill="Actual"
+							row.reading_code="Normal Reading"
+							row.comments="Normal"
+							row.billing_period=cur_frm.doc.billing_period
+							row.meter_reader=cur_frm.doc.meter_reader
+							cur_frm.refresh_field('meter_reading_sheet');
+						})
+					}
+				})
+			});
+		}
+	});
+}
+
+
+/* end of the general functions section
+// =================================================================================================
+/* This section  contains functions that are triggered by the form action refresh or
+reload to perform various action*/
 
 /*function that acts when the readings field under meter reading sheet is
 filled*/
@@ -15,16 +129,6 @@ frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm
 		}
 	}
 });
-
-
-/*function that acts when the estimated consumption field under meter reading sheet is
-filled*/
-frappe.ui.form.on("Meter Reading Sheet", "estimated_consumption", function(frm, cdt, cdn) {
-	var d = locals[cdt][cdn];
-	frappe.model.set_value(cdt, cdn, "manual_consumption", d.estimated_consumption);
-	frappe.model.set_value(cdt, cdn, "current_manual_readings", );
-});
-
 
 /* function that generates sales when the finish capture button is clicked*/
 frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
@@ -45,7 +149,6 @@ frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 
 });
 
-// current test section
 /* function that generates sales when the export as excel sheet button is clicked*/
 frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
 	frappe.route_options = {"reference_doctype":"Meter Reading Capture","file_type":"Excel"}
@@ -53,7 +156,6 @@ frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
 	// frappe.model.set_value("reference_doctype", "Meter Reading Capture")
 	// cur_frm.save();
 });
-
 
 frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cdt, cdn) {
 	var z = locals[cdt][cdn];
@@ -64,102 +166,14 @@ frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cd
 	}
 });
 
-/*function that sets the route_and_billing_period fields when a billing 
-period is chosen*/
-frappe.ui.form.on("Meter Reading Capture", "billing_period", function(frm){ 
-	if (frm.doc.route && frm.doc.billing_period){
-		console.log(frm.doc.route, frm.doc.billing_period)
-		cur_frm.set_value("route_and_billing_period",frm.doc.route +' '+ frm.doc.billing_period)
-	}
-});
-
-/*function that sets the route_and_billing_period fields when a route is chosen*/
-frappe.ui.form.on("Meter Reading Capture", "route", function(frm){ 
-	if (frm.doc.route && frm.doc.billing_period){
-		frm.doc.route_and_billing_period=frm.doc.route +' '+ frm.doc.billing_period
-	}
-	frappe.call({
-				method: "frappe.client.get_list",
-				args: 	{
-						doctype: "Customer",
-						filters: {
-							'route':["=", cur_frm.doc.route]
-						},
-				},
-
-				callback: function(r) {	
-					cur_frm.clear_table("meter_reading_sheet"); 
-					cur_frm.refresh_fields();
-					$.each(r.message || [], function(i, v){	
-						cur_frm.grids[0].grid.add_new_row(null,null,false);
-						var newrow = cur_frm.grids[0].grid.grid_rows[cur_frm.grids[0].grid.grid_rows.length - 1].doc;
-						newrow.customer_name=v.name
-						var cust_naming=v.name
-					});
-
-					frm.doc.meter_reading_sheet.forEach(function(row){ 
-						frappe.call({
-							method: "frappe.client.get",
-							args: {
-								doctype: "Customer",
-								filters: {"customer_name":row.customer_name}    
-							},
-							callback: function(r) {
-								$.each(frm.doc.meter_reading_sheet || [], function(i, v) {
-									row.account_no=r.message.new_account_no
-									row.dma=r.message.dma	
-									row.meter_number=r.message.meter_serial_no
-									row.previous_reading=r.message.initial_reading
-									row.walk_no=r.message.walk_no	
-									row.reading_date=frm.doc.reading_date
-									row.tel_no=r.message.tel_no
-									row.balance_bf=r.message.outstanding_balances
-									row.bill_category="Periodical"
-									row.type_of_bill="Actual"
-									row.reading_code="Normal Reading"
-									row.comments="Normal"
-									row.billing_period=frm.doc.billing_period
-									row.meter_reader=frm.doc.meter_reader
-									frm.refresh_field('meter_reading_sheet');
-								})
-							}
-						})
-					});
-				}
-	});
-});
-
-
-//frappe.ui.form.on(“Meter Reading Capture”, “onload”, function(frm,cdt, cdn){
- //$(".grid-add-row").hide();
-
-//});
-
-//Expand first row
-//frappe.ui.form.on("Meter Reading Sheet", "customer_name",function(frm,cdt, cdn){
-//	    $(".btn-open-row").trigger('click');   
-//	});
-
-//Expand current row
-//frappe.ui.form.on("Meter Reading Sheet", "customer_name", function(frm,cdt, cdn) {
-//var cur_grid =frm.get_field("meter_reading_sheet").grid;
-//var cur_doc = locals[cdt][cdn];
-//var cur_row = cur_grid.get_row(cur_doc.name);
-//cur_row.toggle_view();
-//});
-
-
-/*function that sets the route query fields */
+/*functions that are triggered on form refresh*/
 frappe.ui.form.on("Meter Reading Capture", "refresh", function(frm) {
 	
-	// sets the value of the country/territory query field
-	cur_frm.set_query("route", function() {
-		return {
-			"filters": {
-				"type_of_territory": "route"
-			}
-		}
-	});
+	// make field route_and_billing_period readonly
+	make_field_readonly("route_and_billing_period")
+	filter_territoty()/*filter territory by route*/
+	set_route_and_billing_period()
+	
 });
 
 
@@ -176,4 +190,6 @@ frappe.ui.form.on("Meter Reading Sheet", "estimated_consumption", function(frm, 
 	frappe.model.set_value(cdt, cdn, "type_of_bill", "Estimated");
 });
 
-// testing versioning
+
+/* end of the form triggered functions section*/
+// =================================================================================================
