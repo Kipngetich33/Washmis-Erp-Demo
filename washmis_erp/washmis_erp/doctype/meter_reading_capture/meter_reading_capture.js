@@ -32,10 +32,9 @@ function filter_territoty(){
 period is chosen*/
 function set_route_and_billing_period(){
 	// when then billing period field is clicked
-	frappe.ui.form.on("Meter Reading Capture", "billing_period", function(frm){ 
-		if (frm.doc.route && frm.doc.billing_period){
-			console.log(frm.doc.route, frm.doc.billing_period)
-			cur_frm.set_value("route_and_billing_period",frm.doc.route +' '+ frm.doc.billing_period)
+	frappe.ui.form.on("Meter Reading Capture", "billing_period", function(){ 
+		if (cur_frm.doc.route && cur_frm.doc.billing_period){
+			cur_frm.set_value("route_and_billing_period",cur_frm.doc.route +' '+ cur_frm.doc.billing_period)
 
 			// add customers in that route to the meter reading sheet
 			get_customers_by_route()
@@ -43,9 +42,9 @@ function set_route_and_billing_period(){
 	});
 	
 	// when the route field is clicked
-	frappe.ui.form.on("Meter Reading Capture", "route", function(frm){ 
-		if (frm.doc.route && frm.doc.billing_period){
-			frm.doc.route_and_billing_period=frm.doc.route +' '+ frm.doc.billing_period
+	frappe.ui.form.on("Meter Reading Capture", "route", function(){ 
+		if (cur_frm.doc.route && cur_frm.doc.billing_period){
+			cur_frm.doc.route_and_billing_period=cur_frm.doc.route +' '+ cur_frm.doc.billing_period
 			
 			// add customers in that route to the meter reading sheet
 			get_customers_by_route()
@@ -96,6 +95,7 @@ function get_customers_by_route(){
 							row.reading_date=cur_frm.doc.reading_date
 							row.tel_no=r.message.tel_no
 							row.balance_bf=r.message.outstanding_balances
+							row.type_of_customer = r.message.customer_type
 
 							// to be set on form
 							row.bill_category="Periodical"
@@ -117,8 +117,7 @@ function get_customers_by_route(){
 }
 
 
-/*function that acts when the readings field under meter reading sheet is
-filled*/
+// function that calculates manual consumption
 function set_manual_consumption(){
 	frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm, cdt, cdn) {
 		var d = locals[cdt][cdn];
@@ -131,35 +130,54 @@ function set_manual_consumption(){
 			}
 		}
 	});
+} 
+
+
+/*function that set type of bill as either actual or estimated*/
+function set_bill_type(){
+	// acts when the current manual reading field  is clicked
+	frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "type_of_bill", "Actual");
+	});
+
+	// acts when the estimated_consumption field is clicked
+	frappe.ui.form.on("Meter Reading Sheet", "estimated_consumption", function(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "type_of_bill", "Estimated");
+	});
 }
+
+
+/* function that generates sales when the finish capture button is clicked*/
+function finish_capture(){
+	frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
+		cur_frm.save();/* save the form first*/
+	
+		var x=0
+		cur_frm.doc.meter_reading_sheet.forEach(function(row){ 
+			frappe.route_options = {
+				"previous_reading":row.previous_manual_reading,
+				"current_reading": row.current_manual_readings,
+				"consumption":row.manual_consumption,
+				"type_of_bill":row.type_of_bill,
+				"billing_period":cur_frm.doc.billing_period,
+				"type_of_invoice":"bill",
+				"customer":row.customer_name,
+				"tariff_category":row.type_of_customer
+			}
+			frappe.set_route("Form", "Sales Invoice","New Sales Invoice 1")
+			x=1
+		})
+	
+	});
+}
+
 
 /* end of the general functions section
 // =================================================================================================
 /* This section  contains functions that are triggered by the form action refresh or
 reload to perform various action*/
-
-
-
-
-
-/* function that generates sales when the finish capture button is clicked*/
-frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
-	// saved the form 
-	cur_frm.save();
-
-	var x=0
-	frm.doc.meter_reading_sheet.forEach(function(row){ 
-		frappe.route_options = {"previous_reading":row.previous_manual_reading,
-								"current_reading": row.current_manual_readings,"consumption":row.manual_consumption,
-								"type_of_bill":row.type_of_bill,
-								"billing_period":frm.doc.billing_period,"type_of_invoice":"bill",
-								"customer":row.customer_name
-							}
-		frappe.set_route("Form", "Sales Invoice","New Sales Invoice 1")
-		x=1
-	})
-
-});
 
 /* function that generates sales when the export as excel sheet button is clicked*/
 frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
@@ -179,28 +197,18 @@ frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cd
 });
 
 
-/*function that set type of bill as either actual or estimated*/
-frappe.ui.form.on("Meter Reading Sheet", "current_manual_readings", function(frm, cdt, cdn) {
-	var d = locals[cdt][cdn];
-	frappe.model.set_value(cdt, cdn, "type_of_bill", "Actual");
-});
-
-
-/*function that set type of bill as either actual or estimated*/
-frappe.ui.form.on("Meter Reading Sheet", "estimated_consumption", function(frm, cdt, cdn) {
-	var d = locals[cdt][cdn];
-	frappe.model.set_value(cdt, cdn, "type_of_bill", "Estimated");
-});
 
 
 /*this is the refresh function triggered by refreshing the form*/
-frappe.ui.form.on("Meter Reading Capture", "refresh", function(frm) {
+frappe.ui.form.on("Meter Reading Capture", "refresh", function() {
 	
 	// make field route_and_billing_period readonly
 	make_field_readonly("route_and_billing_period")
 	filter_territoty()/*filter territory by route*/
-	set_route_and_billing_period()
-	set_manual_consumption()
+	set_route_and_billing_period()/* sets the value of route and billing period*/
+	set_manual_consumption() /* sets the value of the manual consumption*/ 
+	set_bill_type()/* sets type of bill as estimated/actual*/
+	finish_capture() /* function that creates sales invoice when finish capture button is clicked*/
 	
 });
 
