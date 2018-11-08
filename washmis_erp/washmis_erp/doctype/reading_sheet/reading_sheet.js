@@ -5,6 +5,21 @@
 /* This section contains code from the general functions section
 which are called is the form triggered functions section*/
 
+
+// function that track sheet by saving new system values
+function track_with_system_values(target_doctype,route,billing_period){
+	frappe.call({
+		"method": "frappe.client.set_value",
+		"args": {
+			"doctype": "System Values",
+			"name": "target_document",
+			"fieldname": "target_document",
+			"value": "Route and Billing Period"
+		}
+	});
+}
+
+
 // function that makes the field passed as a parameter readonly
 function make_field_readonly(given_field){
 	cur_frm.set_df_property(given_field,"read_only", 1);
@@ -28,21 +43,68 @@ function filter_territoty(){
 	});
 }
 
+// function that get the last billing period in that route
+function get_last_reading_sheet(route,billing_period){
+	// get the last record number of route from system values
+
+	frappe.call({
+		method: "frappe.client.get_list",
+		args: 	{
+				doctype: "System Values",
+				filters: {
+					target_document: "System Values",
+					target_record: route+','+billing_period,
+				},	
+		},
+		callback: function(response) {	
+			console.log("this is the last billing period")
+			
+			if(response.message.length>0){
+				console.log(response)
+			}
+			else{
+				console.log("A previous record does not exist")
+			}
+		}
+	})
+
+	// frappe.call({
+	// 	method: "frappe.client.get_list",
+	// 	args: 	{
+	// 			doctype: "Reading Sheet",
+	// 			filters: {
+	// 				route:route,
+	// 				billing_period:billing_period
+	// 			},	
+	// 	},
+	// 	callback: function(response) {	
+	// 		console.log("this is the last billing period")
+			
+	// 		if(response.message.length>0){
+	// 			console.log(response)
+	// 		}
+	// 		else{
+	// 			console.log("A previous record does not exist")
+	// 		}
+	// 	}
+	// });
+	
+}
+
 /*function that sets the route_and_billing_period fields when a billing 
 period is chosen*/
 function set_route_and_billing_period(){
 	// when then billing period field is clicked
-	frappe.ui.form.on("Meter Reading Capture", "billing_period", function(){ 
+	frappe.ui.form.on("Reading Sheet", "billing_period", function(){ 
 		if (cur_frm.doc.route && cur_frm.doc.billing_period){
 			cur_frm.set_value("route_and_billing_period",cur_frm.doc.route +' '+ cur_frm.doc.billing_period)
-
 			// add customers in that route to the meter reading sheet
 			get_customers_by_route()
 		}
 	});
 	
 	// when the route field is clicked
-	frappe.ui.form.on("Meter Reading Capture", "route", function(){ 
+	frappe.ui.form.on("Reading Sheet", "route", function(){
 		if (cur_frm.doc.route && cur_frm.doc.billing_period){
 			cur_frm.doc.route_and_billing_period=cur_frm.doc.route +' '+ cur_frm.doc.billing_period
 			
@@ -61,6 +123,8 @@ function get_customers_by_route(){
 		args: 	{
 				doctype: "Customer",
 				filters: {
+					// area:
+					// zone:
 					route:cur_frm.doc.route,
 					status:"Active"
 				},
@@ -84,6 +148,8 @@ function get_customers_by_route(){
 						filters: {"system_no":row.system_no}    
 					},
 					callback: function(r) {
+						console.log("found customers")
+						console.log(r)
 
 						$.each(cur_frm.doc.meter_reading_sheet || [], function(i, v) {
 							// customer details
@@ -107,7 +173,11 @@ function get_customers_by_route(){
 							cur_frm.refresh_field('meter_reading_sheet');
 
 							// the value from the code below should be moved to a different doctype
-							row.previous_reading=r.message.initial_reading
+							row.previous_manual_reading=r.message.previous_reading
+
+							// get the last reading sheet details
+							get_last_reading_sheet(cur_frm.doc.route,cur_frm.doc.billing_period)
+
 						})
 					}
 				})
@@ -153,7 +223,6 @@ function set_bill_type(){
 function finish_capture(){
 	frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 		cur_frm.save();/* save the form first*/
-		
 		
 		if(cur_frm.doc.meter_reading_sheet.length>0){
 			var x=0
@@ -206,7 +275,7 @@ frappe.ui.form.on("Meter Reading Sheet", "meter_reading_sheet", function(frm, cd
 
 
 /*this is the refresh function triggered by refreshing the form*/
-frappe.ui.form.on("Meter Reading Capture", "refresh", function() {
+frappe.ui.form.on("Reading Sheet", "refresh", function() {
 	
 	// make field route_and_billing_period readonly
 	make_field_readonly("route_and_billing_period")
@@ -218,5 +287,14 @@ frappe.ui.form.on("Meter Reading Capture", "refresh", function() {
 	
 });
 
+
+/*this is the before save function that saves the values to 
+System Values doctype to track the records*/
+frappe.ui.form.on("Reading Sheet", { after_save: function(){
+	console.log("after save")
+	// track_with_system_values("Reading Sheet",cur_frm.doc.route,cur_frm.doc.billing_period)
+}})
+
 /* end of the form triggered functions section*/
 // =================================================================================================
+
