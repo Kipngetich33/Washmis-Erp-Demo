@@ -7,29 +7,43 @@ import frappe
 from frappe.model.document import Document
 
 class ReadingSheet(Document):
-	print "****************************************"
-	
+	print "*****************start***********************"
 	pass
 
 	def on_update(self):
-		last_reading_sheet = frappe.get_list("System Values",
-		fields=["target_document", "int_value","target_record"],
-		filters = {
-			"target_document": "Reading Sheet",
-			"target_record":self.route,
-		})
+		pass
+	# 	last_reading_sheet = frappe.get_list("System Values",
+	# 	fields=["name","target_document", "int_value","target_record"],
+	# 	filters = {
+	# 		"target_document": "Reading Sheet",
+	# 		"target_record":self.route,
+	# 	})
 
-		print("****************************************")
-		print "this is the response"
-		print last_reading_sheet
-		print type(last_reading_sheet)
+	# 	print("*******************on update*********************")
+	# 	print "this is the response"
+	# 	print last_reading_sheet
+	# 	print type(last_reading_sheet)
 
-		if(len(last_reading_sheet)>0):
-			# update value
-			print last_reading_sheet[0]["int_value"]
-		else:
-			# create a new document
+	# 	if(len(last_reading_sheet)>0):
+	# 		system_value_document = last_reading_sheet[0]
+	# 		print (last_reading_sheet)
+	# 		new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
+	# 		new_system_value.int_value = last_reading_sheet[0].int_value +1
+	# 		new_system_value.save()
+			
+	# 		# set the value of tracker for reading sheet
+	# 		self.tracker_number = new_system_value.int_value
+	# 		self.save()
+			
+			
+	# 	else:
+	# 		# create a new system value for the route
+	# 		new_system_value = frappe.get_doc({'doctype': 'System Values'})
+	# 		new_system_value.target_document = "Reading Sheet"
+	# 		new_system_value.target_record = self.route
+	# 		new_system_value.int_value = 1
+	# 		new_system_value.insert()
 
-
-			 
-		
+	# 		# set the value of tracker for reading sheet
+	# 		self.tracker_number = new_system_value.int_value
+	# 		# self.save()
