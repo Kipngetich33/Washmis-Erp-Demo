@@ -6,23 +6,58 @@
 which are called is the form triggered functions section*/
 
 
+// function that sends the saved reading shee to meter reading capture
+function send_to_meter_reading_capture(){
+	frappe.ui.form.on("Reading Sheet", "send_to_meter_reading_capture", function() {
+		cur_frm.save()/* save the form first*/
+
+		// send the reading sheet number to meter reading capture
+		console.log("Getting the reading sheet")
+		frappe.call({
+			method: "frappe.client.get_list",
+			args: {
+				doctype: "Reading Sheet",
+				filters: {"target_document":"Reading Sheet","target_record":route},
+				fields:["name","int_value","description"]
+			},
+			callback: function(response) {
+			}
+		})
+	})
+}
+
+
+/* function that saves the form when the save reading sheet button is clicked*/
+function save_reading_sheet(){
+	frappe.ui.form.on("Reading Sheet", "save_reading_sheet", function() {
+		cur_frm.save();
+	})
+}
+
 // function set tracker number
-function set_tracker_number(route){
+function set_tracker_number(route,billing_period){
 	frappe.call({
 		method: "frappe.client.get_list",
 		args: {
 			doctype: "System Values",
 			filters: {"target_document":"Reading Sheet","target_record":route},
-			fields:["name","int_value"]
+			fields:["name","int_value","description"]
 		},
 		callback: function(response) {
 			if(response.message.length){
-				cur_frm.set_value("tracker_number",response.message[0].int_value+1)
+				// add one to the existing system value for a new reading on route and 
+				// billing period
+				if(response.message[0].description == billing_period){
+					cur_frm.set_value("tracker_number",response.message[0].int_value+1)
+				}
+				else{
+					cur_frm.set_value("tracker_number",response.message[0].int_value+1)
+				}
 			}
 			else{
 				// if the system value does not exist set value to 0
 				// set the value using get_last_reading_sheet.py on save
-				cur_frm.set_value("tracker_number",0)
+				cur_frm.set_value("tracker_number",1)
 			}
 		}
 	})
@@ -96,7 +131,9 @@ function get_customer_with_no(system_no){
 			newrow.type_of_bill="Actual"
 			newrow.reading_code="Normal Reading"
 			newrow.comments="Normal"
+			newrow.reading_sheet_no = cur_frm.doc.tracker_number
 			newrow.billing_period=cur_frm.doc.billing_period
+			newrow.route=cur_frm.doc.route
 			newrow.meter_reader=cur_frm.doc.meter_reader
 			newrow.previous_manual_reading=response.message.previous_reading
 		}
@@ -184,6 +221,8 @@ frappe.ui.form.on("Reading Sheet", "refresh",function(){
 	filter_territoty()/*filter territory by route*/
 	set_manual_consumption() /* sets the value of the manual consumption*/ 
 	set_bill_type()/* sets type of bill as estimated/actual*/
+	save_reading_sheet() /* saves form when the save reading sheet button is clicked*/
+	send_to_meter_reading_capture()/* function that set route options to meter reading capture*/
 });
 
 
@@ -202,8 +241,7 @@ frappe.ui.form.on("Reading Sheet", "billing_period", function(){
 		cur_frm.set_value("route_and_billing_period",cur_frm.doc.route +' '+ cur_frm.doc.billing_period)
 		// add customers in that route to the meter reading sheet
 		get_customers_by_route()
-		set_tracker_number(cur_frm.doc.route)
-		console.log("Collecting Customer")
+		set_tracker_number(cur_frm.doc.route,cur_frm.doc.billing_period)
 	}
 });
 
@@ -214,12 +252,10 @@ frappe.ui.form.on("Reading Sheet", "route", function(){
 		cur_frm.doc.route_and_billing_period=cur_frm.doc.route +' '+ cur_frm.doc.billing_period
 		// add customers in that route to the meter reading sheet
 		get_customers_by_route()
-		set_tracker_number(cur_frm.doc.route)
-		console.log("Collecting Customer")
+		set_tracker_number(cur_frm.doc.route,cur_frm.doc.billing_period)
 	}
 });
 // end of test section
 
 /* end of the form triggered functions section*/
 // =================================================================================================
-
