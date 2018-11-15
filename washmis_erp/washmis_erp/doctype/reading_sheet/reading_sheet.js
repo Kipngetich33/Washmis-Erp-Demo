@@ -8,21 +8,15 @@ which are called is the form triggered functions section*/
 
 // function that sends the saved reading shee to meter reading capture
 function send_to_meter_reading_capture(){
+	// when the send to meter reading button is clicked
 	frappe.ui.form.on("Reading Sheet", "send_to_meter_reading_capture", function() {
-		cur_frm.save()/* save the form first*/
-
-		// send the reading sheet number to meter reading capture
-		console.log("Getting the reading sheet")
-		frappe.call({
-			method: "frappe.client.get_list",
-			args: {
-				doctype: "Reading Sheet",
-				filters: {"target_document":"Reading Sheet","target_record":route},
-				fields:["name","int_value","description"]
-			},
-			callback: function(response) {
-			}
-		})
+		cur_frm.save(); /* save the form first */
+		// redirect to meter reading capture
+		frappe.route_options = {
+			"billing_period":cur_frm.doc.billing_period,
+			"route":cur_frm.doc.route,
+		}
+		frappe.set_route("Form", "Meter Reading Capture","New Meter Reading Sheet 1")
 	})
 }
 
@@ -238,6 +232,7 @@ frappe.ui.form.on("Reading Sheet", { after_save: function(){
 // function that runs when the billing field is clicked
 frappe.ui.form.on("Reading Sheet", "billing_period", function(){ 
 	if (cur_frm.doc.route && cur_frm.doc.billing_period){
+		console.log("inside billing function")
 		cur_frm.set_value("route_and_billing_period",cur_frm.doc.route +' '+ cur_frm.doc.billing_period)
 		// add customers in that route to the meter reading sheet
 		get_customers_by_route()
@@ -249,10 +244,19 @@ frappe.ui.form.on("Reading Sheet", "billing_period", function(){
 // when the route field is clicked
 frappe.ui.form.on("Reading Sheet", "route", function(){
 	if (cur_frm.doc.route && cur_frm.doc.billing_period){
-		cur_frm.doc.route_and_billing_period=cur_frm.doc.route +' '+ cur_frm.doc.billing_period
-		// add customers in that route to the meter reading sheet
-		get_customers_by_route()
-		set_tracker_number(cur_frm.doc.route,cur_frm.doc.billing_period)
+
+		// check if form has been redirected
+		if(cur_frm.doc.redirect_from_meter_reading_capture == "True"){
+			// do nothing
+		}
+		else{
+			cur_frm.doc.route_and_billing_period=cur_frm.doc.route +' '+ cur_frm.doc.billing_period
+			// add customers in that route to the meter reading sheet
+			get_customers_by_route()
+			set_tracker_number(cur_frm.doc.route,cur_frm.doc.billing_period)
+		}
+		console.log("inside route function")
+		
 	}
 });
 // end of test section
