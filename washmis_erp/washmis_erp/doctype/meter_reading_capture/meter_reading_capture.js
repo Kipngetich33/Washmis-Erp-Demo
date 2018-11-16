@@ -13,9 +13,10 @@ function confirm_redirect_to_reading_sheet(){
 		function(){
 			// redirect to reading sheet
 			frappe.route_options = {
+				"redirected_from_meter_reading_capture":"True",
 				"billing_period":cur_frm.doc.billing_period,
 				"route":cur_frm.doc.route,
-				"redirected_from_meter_reading_capture":"True"
+				
 			}
 			frappe.set_route("Form", "Reading Sheet","New Reading Sheet 1")
 		}

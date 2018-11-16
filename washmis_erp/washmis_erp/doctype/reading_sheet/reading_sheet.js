@@ -228,11 +228,9 @@ frappe.ui.form.on("Reading Sheet", { after_save: function(){
 }});
 
 
-// test section
 // function that runs when the billing field is clicked
 frappe.ui.form.on("Reading Sheet", "billing_period", function(){ 
 	if (cur_frm.doc.route && cur_frm.doc.billing_period){
-		console.log("inside billing function")
 		cur_frm.set_value("route_and_billing_period",cur_frm.doc.route +' '+ cur_frm.doc.billing_period)
 		// add customers in that route to the meter reading sheet
 		get_customers_by_route()
@@ -244,9 +242,10 @@ frappe.ui.form.on("Reading Sheet", "billing_period", function(){
 // when the route field is clicked
 frappe.ui.form.on("Reading Sheet", "route", function(){
 	if (cur_frm.doc.route && cur_frm.doc.billing_period){
-
-		// check if form has been redirected
-		if(cur_frm.doc.redirect_from_meter_reading_capture == "True"){
+		
+		// check if form has been redirected this is to ensure that the
+		// customers in the field are not populated twice
+		if(cur_frm.doc.redirected_from_meter_reading_capture == "True"){
 			// do nothing
 		}
 		else{
@@ -255,11 +254,8 @@ frappe.ui.form.on("Reading Sheet", "route", function(){
 			get_customers_by_route()
 			set_tracker_number(cur_frm.doc.route,cur_frm.doc.billing_period)
 		}
-		console.log("inside route function")
-		
 	}
 });
-// end of test section
 
 /* end of the form triggered functions section*/
 // =================================================================================================
