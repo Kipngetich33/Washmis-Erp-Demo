@@ -7,41 +7,33 @@ import frappe
 from frappe.model.document import Document
 
 class ReadingSheet(Document):
+	print "*******************Validating*******************************"
 	def validate(self):
-		pass
-		# print "*******************Validating*******************************"
-		# print "self.route"
-		# print self.route 
-		# print self.billing_period
+		'''
+		checks:
+			(i) Ensure that Reading sheets are saved in the right order
+				i.e a January Reading Sheet Should come before february
+			(ii)
+		'''
 
-		# get the last billing_period from the system values
-		# last_reading_sheet = frappe.get_list("System Values",
-		# fields=["name","target_document", "int_value","target_record"],
-		# filters = {
-		# 	"target_document": "Reading Sheet",
-		# 	"target_record":self.route,
-		# })
-		# last_reading_sheet = get_last_reading_sheet(self)
+		# get system value saved for a specific route
+		last_system_values = get_last_system_value(self.route)
 		
-		# if(len(last_reading_sheet)>0):
-		# 	# system value for the route exist
-		# 	name_of_billing_period = last_reading_sheet[0].description
-		# 	print "name of period"
-		# 	print name_of_billing_period
-		# 	# get the date and rank of billing period
-		# 	# billing_period = get_date_and_rank(name_of_billing_period)
-		# 	billing_period = get_date_and_rank("January")
-		# 	if(len(billing_period)>0):
-		# 		print "billing period"
-		# 		print billing_period				
-		# 	else:
-		# 		frappe.throw(_("The Selected Billing Period Does Not Exist"))
-				
-			
-		# else:
-		# 	# system value for the route exist does 
-		# 	print "Last System values does not exist"
-		# 	pass
+		# get the rank of the billing period in last system value
+		rank_of_last_period = get_period(last_system_values.description).period_rank
+		rank_of_current_period = get_period(self.billing_period).period_rank
+		
+		#the ranks of current billing period should be greater than that 
+		# of previous by 1
+		can_create_sheet = compare_period_ranks(rank_of_current_period,rank_of_last_period)
+
+		if(can_create_sheet):
+			# the billing period rank is correct so continue
+			pass
+
+		print "********test section**********"
+		# frappe.throw("Pause")
+		
 
 	def on_update(self):
 		print "*****************Reading Sheet Updated***********************"
@@ -62,8 +54,12 @@ class ReadingSheet(Document):
 
 		# (i) Check that a system value for route exist else create one
 		if(len(last_reading_sheet)>0):
+			print "this is the name"
+			print last_reading_sheet[0].name
+
 			new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
 			new_system_value.int_value = self.tracker_number
+			new_system_value.description = self.billing_period
 			new_system_value.save()
 		else:
 			# create a new system value for the route
@@ -79,31 +75,59 @@ class ReadingSheet(Document):
 		
 
 
-
+# ================================================================================
 # the section below is the general functions section
 
-def get_last_reading_sheet(self):
+def get_last_system_value(route):
 	'''
 	Function that gets the system values of the last reading sheet
 	for a specific route
 	'''
-	last_reading_sheet = frappe.get_list("System Values",
-			fields=["name","target_document", "int_value","target_record"],
+	last_system_value = frappe.get_list("System Values",
+			fields=["int_value","name","description"],
 			filters = {
 				"target_document": "Reading Sheet",
-				"target_record":self.route,
+				"target_record":route,
 			})
-	return last_reading_sheet
+	if(len(last_system_value)>0):
+		return last_system_value[0]
+	else:
+		frappe.throw("System Values for Period: {} Does not Exist".format(route))
 
 
-def get_date_and_rank(name_of_billing_period):
+def get_period(name_of_billing_period):
 	'''
-	function that returns the date and the rank of a
-	billing period parsed
+	function that returns the billing period values when the
+	name of the period's name is provided
 	'''
-	requested_billing_period = frappe.get_list("Billing Period",
-			fields=["name","period_rank", "start_date_of_billing_period","end_date_of_billing_period"],
+	requested_period_values = frappe.get_list("Billing Period",
+			fields=["period_rank","name"],
 			filters = {
 				"name": name_of_billing_period,
 			})
-	return requested_billing_period
+
+	if(len(requested_period_values)>0):
+		return requested_period_values[0]
+	else:
+		frappe.throw("Billing Period named {} Does not Exist".format(name_of_billing_period))
+
+
+def compare_period_ranks(rank_of_current_period,rank_of_last_period):
+	'''
+	function that checks if the current billing period ranks is 
+	greater than  the previous one by only 1
+
+	reason:
+		(i) should be greater only by one to ensure that the period
+			is the next month and not more than 1 month ahead
+			eg. if last_period was January the next should be Feb 
+			and not March or beyond
+	'''
+	if(rank_of_current_period > rank_of_last_period+1):
+		frappe.throw("Please Create Reading Sheet for the Previous First")
+	elif(rank_of_current_period == rank_of_last_period+1):
+		return True
+	elif(rank_of_current_period < rank_of_last_period+1):
+		frappe.throw("Reading Sheet for Given Period Has Already Been Created")
+
+
