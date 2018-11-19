@@ -7,15 +7,15 @@ import frappe
 from frappe.model.document import Document
 
 class ReadingSheet(Document):
-	print "*******************Validating*******************************"
 	def validate(self):
 		'''
 		checks:
 			(i) Ensure that Reading sheets are saved in the right order
 				i.e a January Reading Sheet Should come before february
-			(ii)
+			(ii) Check both previous and current reading have been given for customers
 		'''
-
+		
+		# (i) Ensure that Reading sheets are saved in the right order
 		# get system value saved for a specific route
 		last_system_values = get_last_system_value(self.route)
 		
@@ -30,19 +30,21 @@ class ReadingSheet(Document):
 		if(can_create_sheet):
 			# the billing period rank is correct so continue
 			pass
-
-		print "********test section**********"
-		# frappe.throw("Pause")
+		
+		# (ii) Check both previous and current reading have been given for customers
+		current_meter_reading_sheet = self.meter_reading_sheet
+		# check if all the details have been filled
+		check_customer_fields(current_meter_reading_sheet)
 		
 
-	def on_update(self):
-		print "*****************Reading Sheet Updated***********************"
 
-		# checks
-		# (i) Check that a system value for route exist else create one
-		# (ii)Ensure that previous reading  match the previous readings
-		#  in the the previous reading period
-		# (iii) Ensure that all customers have account numbers
+	def on_update(self):
+		'''
+		(a) checks:
+			(i) Check that a system value for route exist else create one
+		(b) excutions:
+			(i) Save the latest reading for current period to the customers
+		'''
 
 		# get the last reading sheet tracker number
 		last_reading_sheet = frappe.get_list("System Values",
@@ -52,11 +54,8 @@ class ReadingSheet(Document):
 			"target_record":self.route,
 		})
 
-		# (i) Check that a system value for route exist else create one
+		# (a)(i) Check that a system value for route exist else create one
 		if(len(last_reading_sheet)>0):
-			print "this is the name"
-			print last_reading_sheet[0].name
-
 			new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
 			new_system_value.int_value = self.tracker_number
 			new_system_value.description = self.billing_period
@@ -70,8 +69,13 @@ class ReadingSheet(Document):
 			new_system_value.description = self.billing_period
 			new_system_value.insert()
 		
-		# (ii)Ensure that previous reading  match the previous readings
-		#  in the the previous reading period
+		# (b)(i) Save the latest reading for current period to the customers
+		# get the list of all the customers in current reading sheet
+		current_meter_reading_sheet = self.meter_reading_sheet
+		# save all the current readings to customer
+		save_current_readings(current_meter_reading_sheet)
+		
+			
 		
 
 
@@ -131,3 +135,86 @@ def compare_period_ranks(rank_of_current_period,rank_of_last_period):
 		frappe.throw("Reading Sheet for Given Period Has Already Been Created")
 
 
+def check_customer_fields(current_meter_reading_sheet):
+	'''
+	Functions that ensures all the required fields are
+	filled including: account_no,previous readings and 
+		manual consumption
+	'''
+	
+	# check if there are any customers in the sheet
+	if(len(current_meter_reading_sheet)== 0):
+		frappe.throw("There Are No Active Customers Marching Route,Billing Period")
+	else:
+		# there are customers loop through each one
+		for i in range(len(current_meter_reading_sheet)):
+			current_row = current_meter_reading_sheet[i]
+			customer_details_exists(current_row)
+			
+
+
+def customer_details_exists(row_to_check):
+	'''
+	Function that checks if a given field in meter
+	reading sheet exists in a certain row
+	'''
+
+	# check if account_no exist
+	if(row_to_check.account_no):
+		# detail exist ,pass
+		pass
+	else:
+		frappe.throw("Account No for Customer {} Does Not Exist".\
+		format(row_to_check.customer_name))
+	# check if previous_reading exist
+	if(row_to_check.account_no):
+		# detail exist ,pass
+		pass
+	else:
+		frappe.throw("Previous Readings for Customer {} Does Not Exist".\
+		format(row_to_check.customer_name))
+
+	# check if current_reading exist
+	if(row_to_check.current_manual_readings):
+		# detail exist ,pass
+		pass
+	else:
+		frappe.throw("Current Readings for Customer {} Does Not Exist".\
+		format(row_to_check.customer_name))
+	
+
+def save_current_readings(current_meter_reading_sheet):
+	'''
+	Functions that loops throught all the customer in meter
+	reading sheet and call the save_each_customer reading
+	function to save them to each customer's previous readings
+	'''
+	# check if there are any customers in the sheet
+	if(len(current_meter_reading_sheet)== 0):
+		frappe.throw("There Are No Active Customers Marching Route,Billing Period")
+	else:
+		# there are customers loop through each one
+		for i in range(len(current_meter_reading_sheet)):
+			current_row = current_meter_reading_sheet[i]
+			save_each_customer_readings(current_row)
+
+
+def save_each_customer_readings(current_row):
+	'''
+	Function that saves the each customer's current readings to 
+	as their previous readings in the customer doctype
+	'''
+	customer_system_no = current_row.system_no
+	# get the customer
+	current_loop_customer = frappe.get_list("Customer",
+			filters = {
+				"system_no": customer_system_no
+			})
+	if(len(current_loop_customer)>0):
+		current_customer_name = current_loop_customer[0].name
+		# get doc of that specific customer
+		current_customer_doc = frappe.get_doc("Customer", current_customer_name)
+		current_customer_doc.previous_reading = current_row.current_manual_readings
+		current_customer_doc.save()
+	else:
+		frappe.throw("Customer of System No {} Does Not Exist".format(customer_system_no))
