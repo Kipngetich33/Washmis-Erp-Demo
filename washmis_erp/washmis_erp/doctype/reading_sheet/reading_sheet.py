@@ -20,12 +20,12 @@ class ReadingSheet(Document):
 		last_system_values = get_last_system_value(self.route)
 		
 		# get the rank of the billing period in last system value
-		rank_of_last_period = get_period(last_system_values.description).period_rank
-		rank_of_current_period = get_period(self.billing_period).period_rank
+		last_period = get_period(last_system_values.description)
+		current_period = get_period(self.billing_period)
 		
 		#the ranks of current billing period should be greater than that 
 		# of previous by 1
-		can_create_sheet = compare_period_ranks(rank_of_current_period,rank_of_last_period)
+		can_create_sheet = compare_period_ranks(current_period,last_period)
 
 		if(can_create_sheet):
 			# the billing period rank is correct so continue
@@ -105,7 +105,7 @@ def get_period(name_of_billing_period):
 	name of the period's name is provided
 	'''
 	requested_period_values = frappe.get_list("Billing Period",
-			fields=["period_rank","name"],
+			fields=["name","period_rank","end_date_of_billing_period","start_date_of_billing_period"],
 			filters = {
 				"name": name_of_billing_period,
 			})
@@ -116,7 +116,7 @@ def get_period(name_of_billing_period):
 		frappe.throw("Billing Period named {} Does not Exist".format(name_of_billing_period))
 
 
-def compare_period_ranks(rank_of_current_period,rank_of_last_period):
+def compare_period_ranks(current_period,last_period):
 	'''
 	function that checks if the current billing period ranks is 
 	greater than  the previous one by only 1
@@ -126,13 +126,22 @@ def compare_period_ranks(rank_of_current_period,rank_of_last_period):
 			is the next month and not more than 1 month ahead
 			eg. if last_period was January the next should be Feb 
 			and not March or beyond
+		(ii) Support transition from december of one year to January 
+		    of the following year
 	'''
-	if(rank_of_current_period > rank_of_last_period+1):
-		frappe.throw("Please Create Reading Sheet for the Previous First")
-	elif(rank_of_current_period == rank_of_last_period+1):
+	if(current_period.period_rank > last_period.period_rank+1):
+		frappe.throw("Please Create Reading Sheet for Previous Period First")
+	elif(current_period.period_rank == last_period.period_rank+1):
 		return True
-	elif(rank_of_current_period < rank_of_last_period+1):
-		frappe.throw("Reading Sheet for Given Period Has Already Been Created")
+	elif(current_period.period_rank < last_period.period_rank+1):
+		# test section
+		going_to_following_year = if_january_next_year(current_period,last_period)
+		if(going_to_following_year):
+			# that is correct so return True
+			return True
+		else:
+			frappe.throw("Reading Sheet for {} Has Already Been Created"\
+			.format(current_period.name))
 
 
 def check_customer_fields(current_meter_reading_sheet):
@@ -218,3 +227,22 @@ def save_each_customer_readings(current_row):
 		current_customer_doc.save()
 	else:
 		frappe.throw("Customer of System No {} Does Not Exist".format(customer_system_no))
+
+def if_january_next_year(current_period,last_period):
+	'''
+	check the current period is december and the next
+	period is Jan of the following year
+	'''
+	if(last_period.start_date_of_billing_period <current_period.start_date_of_billing_period):
+		# check if month and dates 
+		if(last_period.start_date_of_billing_period.month == 12 and current_period.start_date_of_billing_period.month ==1 ):
+			return True
+		else:
+			return False
+	elif(last_period.start_date_of_billing_period >current_period.start_date_of_billing_period):
+		return False
+	else:
+		return False
+	
+	
+	
