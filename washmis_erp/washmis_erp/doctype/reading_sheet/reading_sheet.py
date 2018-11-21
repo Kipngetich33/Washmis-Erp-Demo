@@ -25,7 +25,8 @@ class ReadingSheet(Document):
 		
 		#the ranks of current billing period should be greater than that 
 		# of previous by 1
-		can_create_sheet = compare_period_ranks(current_period,last_period)
+		# can_create_sheet = compare_period_ranks(current_period,last_period)
+		can_create_sheet = True
 
 		if(can_create_sheet):
 			# the billing period rank is correct so continue
@@ -43,7 +44,11 @@ class ReadingSheet(Document):
 		(a) checks:
 			(i) Check that a system value for route exist else create one
 		(b) excutions:
-			(i) Save the latest reading for current period to the customers
+			(i) Check if sheet is already saved:
+				if reading sheet is already saved:
+				 	 do not change system values
+				else: Save new values and 
+				 	Save the latest reading for current period to the customers
 		'''
 
 		# get the last reading sheet tracker number
@@ -56,10 +61,23 @@ class ReadingSheet(Document):
 
 		# (a)(i) Check that a system value for route exist else create one
 		if(len(last_reading_sheet)>0):
-			new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
-			new_system_value.int_value = self.tracker_number
-			new_system_value.description = self.billing_period
-			new_system_value.save()
+			# (i) Check if sheet is already saved:
+			already_saved = if_reading_sheet_exist(last_reading_sheet[0].name)
+
+			if(already_saved):
+				# do not change system values
+				pass
+			else:
+				new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
+				new_system_value.int_value = self.tracker_number
+				new_system_value.description = self.billing_period
+				new_system_value.save()
+
+				# (b)(i) Save the latest reading for current period to the customers
+				# get the list of all the customers in current reading sheet
+				current_meter_reading_sheet = self.meter_reading_sheet
+				# save all the current readings to customer
+				save_current_readings(current_meter_reading_sheet)
 		else:
 			# create a new system value for the route
 			new_system_value = frappe.get_doc({'doctype': 'System Values'})
@@ -69,12 +87,22 @@ class ReadingSheet(Document):
 			new_system_value.description = self.billing_period
 			new_system_value.insert()
 		
-		# (b)(i) Save the latest reading for current period to the customers
-		# get the list of all the customers in current reading sheet
-		current_meter_reading_sheet = self.meter_reading_sheet
-		# save all the current readings to customer
-		save_current_readings(current_meter_reading_sheet)
+			# (b)(i) Save the latest reading for current period to the customers
+			# get the list of all the customers in current reading sheet
+			current_meter_reading_sheet = self.meter_reading_sheet
+			# save all the current readings to customer
+			save_current_readings(current_meter_reading_sheet)
 		
+	
+	def on_trash(self):
+		'''
+		Contoller function called before a Reading Sheet
+		is deleted
+		(i) Deny Deletion to avoid data loss
+		'''
+		# (i) Deny deletion to avoid loss of data
+		frappe.throw("You Can Only Modify a Reading Sheet Once its Created")
+
 			
 		
 
@@ -245,4 +273,23 @@ def if_january_next_year(current_period,last_period):
 		return False
 	
 	
+def if_reading_sheet_exist(name_of_reading_sheet):
+	'''
+	Function that checks if the current reading sheet 
+	already been saved
+	arg:
+		name of curren reading sheet
+	output:
+		True / False
+	'''
+	requested_reading_sheets = frappe.get_list("Reading Sheet",
+			fields=["name"],
+			filters = {
+				"name": name_of_reading_sheet,
+			})
+	if(len(requested_reading_sheets)>0):
+		# a reading sheet with the name already exists
+		return True
+	else:
+		return False
 	
