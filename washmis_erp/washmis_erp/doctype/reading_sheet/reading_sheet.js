@@ -5,17 +5,18 @@
 /* This section contains code from the general functions section
 which are called is the form triggered functions section*/
 
+/* function thatexports as excel sheet button is clicked*/
+frappe.ui.form.on("Reading Sheet", "export_file", function(frm) {
+	cur_frm.save();
+	frappe.route_options = {"reference_doctype":"Reading Sheet","file_type":"Excel"}
+	frappe.set_route("Form", "Data Export","New Data Export 1");	
+});
 
 // function that sends the saved reading shee to meter reading capture
-function send_to_meter_reading_capture(){
+function go_to_meter_reading_capture(){
 	// when the send to meter reading button is clicked
-	frappe.ui.form.on("Reading Sheet", "send_to_meter_reading_capture", function() {
+	frappe.ui.form.on("Reading Sheet", "go_to_meter_reading_capture", function() {
 		cur_frm.save(); /* save the form first */
-		// redirect to meter reading capture
-		frappe.route_options = {
-			"billing_period":cur_frm.doc.billing_period,
-			"route":cur_frm.doc.route,
-		}
 		frappe.set_route("Form", "Meter Reading Capture","New Meter Reading Sheet 1")
 	})
 }
@@ -216,7 +217,7 @@ frappe.ui.form.on("Reading Sheet", "refresh",function(){
 	set_manual_consumption() /* sets the value of the manual consumption*/ 
 	set_bill_type()/* sets type of bill as estimated/actual*/
 	save_reading_sheet() /* saves form when the save reading sheet button is clicked*/
-	send_to_meter_reading_capture()/* function that set route options to meter reading capture*/
+	go_to_meter_reading_capture()/* redirect user to meter reading capture*/
 });
 
 
