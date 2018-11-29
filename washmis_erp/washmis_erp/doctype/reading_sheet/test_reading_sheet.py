@@ -4,7 +4,9 @@
 from __future__ import unicode_literals
 
 import frappe
+import frappe.defaults
 import unittest
 
 class TestReadingSheet(unittest.TestCase):
+	frappe.set_user("Administrator")
 	pass

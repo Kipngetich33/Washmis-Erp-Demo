@@ -5,12 +5,14 @@
 /* This section contains code from the general functions section
 which are called is the form triggered functions section*/
 
+
 /* function thatexports as excel sheet button is clicked*/
 frappe.ui.form.on("Reading Sheet", "export_file", function(frm) {
 	cur_frm.save();
 	frappe.route_options = {"reference_doctype":"Reading Sheet","file_type":"Excel"}
 	frappe.set_route("Form", "Data Export","New Data Export 1");	
 });
+
 
 // function that sends the saved reading shee to meter reading capture
 function go_to_meter_reading_capture(){
@@ -28,6 +30,7 @@ function save_reading_sheet(){
 		cur_frm.save();
 	})
 }
+
 
 // function set tracker number
 function set_tracker_number(route,billing_period){
@@ -57,6 +60,7 @@ function set_tracker_number(route,billing_period){
 		}
 	})
 }
+
 
 // function that track sheet by saving new system values
 function track_with_system_values(target_doctype,route,billing_period){
