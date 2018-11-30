@@ -62,20 +62,6 @@ function set_tracker_number(route,billing_period){
 }
 
 
-// function that track sheet by saving new system values
-function track_with_system_values(target_doctype,route,billing_period){
-	frappe.call({
-		"method": "frappe.client.set_value",
-		"args": {
-			"doctype": "System Values",
-			"name": "target_document",
-			"fieldname": "target_document",
-			"value": "Route and Billing Period"
-		}
-	});
-}
-
-
 // function that makes the field passed as a parameter readonly
 function make_field_readonly(given_field){
 	cur_frm.set_df_property(given_field,"read_only", 1);
@@ -223,14 +209,6 @@ frappe.ui.form.on("Reading Sheet", "refresh",function(){
 	save_reading_sheet() /* saves form when the save reading sheet button is clicked*/
 	go_to_meter_reading_capture()/* redirect user to meter reading capture*/
 });
-
-
-/*this is the before save function that saves the values to 
-System Values doctype to track the records*/
-frappe.ui.form.on("Reading Sheet", { after_save: function(){
-	console.log("after save")
-	// track_with_system_values("Reading Sheet",cur_frm.doc.route,cur_frm.doc.billing_period)
-}});
 
 
 // function that runs when the billing field is clicked

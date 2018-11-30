@@ -20,6 +20,7 @@ class ReadingSheet(Document):
 		# (ii) Check that a system value for route exist else create one
 		sytem_values_exist = check_system_values_for_route(self)
 		if(sytem_values_exist):
+			# system values for this route already exist hence pass
 			pass
 		else:
 			create_new_system_values_for_route(self)
@@ -38,64 +39,14 @@ class ReadingSheet(Document):
 		else:
 			# save and change system values, customer readings
 			save_current_readings(self.meter_reading_sheet)
-			update_system_values_for_route(self)
-
-		# (a)(i) Check that a system value for route exist else create one
-		# if(len(last_reading_sheet)>0):
-		# 	# (i) Check if sheet is already saved:
-		# 	already_saved = if_reading_sheet_exist(last_reading_sheet[0].name)
-
-		# 	if(already_saved):
-		# 		# do not change system values
-		# 		# (b)(i) Save the latest reading for current period to the customers
-		# 		current_meter_reading_sheet = self.meter_reading_sheet
-		# 		# save current readings to customers
-		# 		save_current_readings(current_meter_reading_sheet)
-
-		# 	else:
-		# 		new_system_value = frappe.get_doc("System Values", last_reading_sheet[0].name)
-		# 		new_system_value.int_value = self.tracker_number
-		# 		new_system_value.description = self.billing_period
-		# 		new_system_value.save()
-
-		# 		# (b)(i) Save the latest reading for current period to the customers
-		# 		current_meter_reading_sheet = self.meter_reading_sheet
-		# 		# save current readings to customers
-		# 		save_current_readings(current_meter_reading_sheet)
-
-		# else:
-		# 	# create a new system value for the route
-		# 	new_system_value = frappe.get_doc({'doctype': 'System Values'})
-		# 	new_system_value.target_document = "Reading Sheet"
-		# 	new_system_value.target_record = self.route
-		# 	new_system_value.int_value = 1
-		# 	new_system_value.description = self.billing_period
-		# 	new_system_value.insert()
 		
-		# 	# (b)(i) Save the latest reading for current period to the customers
-		# 	current_meter_reading_sheet = self.meter_reading_sheet
-		# 	save_current_readings(current_meter_reading_sheet)
-
-
-		# (ii) Ensure that Reading sheets are saved in the right order
-		# last_system_values = get_last_system_value(self)
-		# last_period = get_period(last_system_values.description)
-		# current_period = get_period(self.billing_period)
-		
-		#the ranks of current billing period should be greater than that 
-		# of previous by 1
-		# can_create_sheet = compare_period_ranks(current_period,last_period)
-		# can_create_sheet = True
-
-		# if(can_create_sheet):
-			# the billing period rank is correct so continue
-			# pass
+		# Update system values for route
+		# You can only update this because all the other test about the
+		# order have already passed
+		update_system_values_for_route(self)
 		
 	def on_update(self):
 		pass
-
-		
-		
 	
 	def on_trash(self):
 		'''
@@ -106,10 +57,6 @@ class ReadingSheet(Document):
 		# (i) Deny deletion to avoid loss of data
 		# frappe.throw("You Can Only Modify a Reading Sheet Once its Created")
 
-			
-		
-
-
 # ================================================================================
 # the section below is the general functions section
 
@@ -119,7 +66,6 @@ def check_customer_fields(current_meter_reading_sheet):
 	filled including: account_no,previous readings and 
 		manual consumption
 	'''
-	
 	# check if there are any customers in the sheet
 	if(len(current_meter_reading_sheet)== 0):
 		frappe.throw("There Are No Active Customers Marching Route,Billing Period")
@@ -275,10 +221,22 @@ def update_system_values_for_route(self):
 	for a route by changing the description field to
 	value current billling period
 	'''
-	new_system_value = frappe.get_doc("System Values", self.name)
-	new_system_value.int_value = self.tracker_number
-	new_system_value.description = self.billing_period
-	new_system_value.save()
+
+	# get the name of system values for this current route
+	system_value_for_route = frappe.get_list("System Values",
+			fields=["int_value","name","description"],
+			filters = {
+				"target_document": "Reading Sheet",
+				"target_record":self.route,
+			})
+
+	if(len(system_value_for_route)>0):
+		new_system_value = frappe.get_doc("System Values", system_value_for_route[0].name)
+		new_system_value.int_value = self.tracker_number
+		new_system_value.description = self.billing_period
+		new_system_value.save()
+	else:
+		frappe.throw("Cannot Update System Values for Current, No record Exist")
 
 def check_if_sheets_saved_in_order(self):
 	'''
@@ -307,8 +265,11 @@ def get_last_system_values_of_route(self):
 				"target_document": "Reading Sheet",
 				"target_record":self.route,
 			})
-	return last_system_value[0]
-
+	if(len(last_system_value)==0):
+		# no values for system exist yet hence pass
+		pass
+	else:
+		return last_system_value[0]
 
 def get_period(name_of_billing_period):
 	'''
@@ -379,4 +340,8 @@ def get_system_values_for_route(self):
 		"target_document": "Reading Sheet",
 		"target_record":self.route,
 	})
-	return last_reading_system_values[0]
+	if(len(last_reading_system_values)==0):
+		# no values for system exist yet hence pass
+		pass
+	else:
+		return last_reading_system_values[0]
