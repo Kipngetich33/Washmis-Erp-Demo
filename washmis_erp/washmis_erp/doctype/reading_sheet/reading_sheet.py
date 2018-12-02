@@ -258,7 +258,7 @@ def check_if_sheets_saved_in_order(self):
 	
 	compare_period_ranks(current_period,last_period)
 	if(compare_period_ranks):
-		return True
+		return True 
 
 def get_last_system_values_of_route(self):
 	'''
