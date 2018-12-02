@@ -2,9 +2,14 @@
 # Copyright (c) 2018, Paul Karugu and contributors
 # For license information, please see license.txt
 
+# python std lib imports
 from __future__ import unicode_literals
+import datetime
+
+# frappe imports
 import frappe
 from frappe.model.document import Document
+
 
 class ReadingSheet(Document):
 	def validate(self):
@@ -29,7 +34,6 @@ class ReadingSheet(Document):
 		# (iv) If Reading Sheet's billing period in order check if its already saved
 		reading_already_saved = False
 		if(in_right_order):
-			print "*"*100
 			reading_already_saved = if_reading_sheet_exist(self.name)
 		
 		if(reading_already_saved):
@@ -241,7 +245,8 @@ def update_system_values_for_route(self):
 def check_if_sheets_saved_in_order(self):
 	'''
 	Function that checks if the current reading 
-	sheet obeys the ranks of billing periods 
+	sheet obeys the ranks of billing periods in 
+	terms of dates
 	args:
 		self
 	output:
@@ -250,6 +255,7 @@ def check_if_sheets_saved_in_order(self):
 	last_saved_period = get_last_system_values_of_route(self).description
 	last_period = get_period(last_saved_period)
 	current_period = get_period(self.billing_period)
+	
 	compare_period_ranks(current_period,last_period)
 	if(compare_period_ranks):
 		return True
@@ -287,43 +293,51 @@ def get_period(name_of_billing_period):
 	else:
 		frappe.throw("Billing Period named {} Does not Exist".format(name_of_billing_period))
 
+def get_period_with_start_date(correct_start_of_next_period):
+	'''
+	Function that gets a billing period basing on the given
+	start date of billing period
+	'''
+	requested_period_values = frappe.get_list("Billing Period",
+			fields=["name","period_rank","end_date_of_billing_period","start_date_of_billing_period"],
+			filters = {
+				"start_date_of_billing_period": correct_start_of_next_period,
+			})
+
+	if(len(requested_period_values)>0):
+		return requested_period_values[0]
+	else:
+		frappe.throw("Billing Period With Start Date {} Does not Exist, Create It First".format(correct_start_of_next_period))
+
 
 def compare_period_ranks(current_period,last_period):
 	'''
-	function that checks if the current billing period ranks is 
-	greater than  the previous one by only 1
-
-	reason:
-		(i) should be equal to or greater only by one to ensure that the period
-			is the next month and not more than 1 month ahead
-			eg. if last_period was January the next should be Feb 
-			and not March or beyond
-		(ii) Support transition from december of one year to January 
-		    of the following year
-	args:
-		current_period,last_period
-	Output:
-		True: if current period is in order
-		False: throw an exception with error message
+	function that checks if the current billing period 
+	start date is exactly the same as the end date of last
+	reading sheet or begging of billing period
 	'''
-	if(current_period.period_rank > last_period.period_rank+1):
-		frappe.throw("Please Create Reading Sheet for Previous Period First")
-	elif(current_period.period_rank == last_period.period_rank+1):
+	c_start = current_period.start_date_of_billing_period
+	c_end = current_period.end_date_of_billing_period
+	l_start = last_period.start_date_of_billing_period
+	l_end = last_period.end_date_of_billing_period
+	correct_start_of_next_period = l_end + datetime.timedelta(days = 1)
+	
+	if(c_start == l_start and c_end == l_end ):
+		# the current reading sheet is the same as the last 
 		return True
-	elif(current_period.period_rank == last_period.period_rank):
-		return True 
-	elif(current_period.period_rank < last_period.period_rank+1):
-		going_to_following_year = if_january_next_year(current_period,last_period)
-		if(going_to_following_year):
-			# that is correct so return True
-			return True
-		else:
-			frappe.throw(
-				"You Are Trying to Create a Reading Sheet for {}\
-				but Reading Sheet for {} has Already Been Created,\
-				You Cannot Create reading Sheet pre {}"\
-				.format(current_period.name,last_period.name,last_period.name)
-			)
+	elif(c_start < correct_start_of_next_period):
+		frappe.throw("The Last Saved Reading Sheet was For Billing Period {} \
+		 You Cannot Create Reading Sheets For Earlier Periods".format(last_period.name))
+	elif(c_start == correct_start_of_next_period):
+		# the current reading sheet is for the correct supposed next period
+		return True
+	elif(c_start > correct_start_of_next_period):
+		# get the correct supposed billing period
+		supposed_next_period = get_period_with_start_date(correct_start_of_next_period)
+		frappe.throw("Create a Reading Sheet for Next Billing Period after {} First".format(supposed_next_period.name))
+	else:
+		frappe.throw("Something Went Wrong with the Compare period Function")
+	
 
 def get_system_values_for_route(self):
 	'''
