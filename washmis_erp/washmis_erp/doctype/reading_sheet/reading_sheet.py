@@ -105,8 +105,14 @@ def customer_details_exists(row_to_check):
 
 	# check if current_reading exist
 	if(row_to_check.current_manual_readings):
-		# detail exist ,pass
-		pass
+		# check for correct readings that should be no negatives
+		if(int(row_to_check.current_manual_readings)>0):
+			pass
+		else:
+			frappe.throw("You Cannot Have Negative Consumption")
+
+
+
 	else:
 		frappe.throw("Current Readings for Customer {} Does Not Exist".\
 		format(row_to_check.customer_name))
