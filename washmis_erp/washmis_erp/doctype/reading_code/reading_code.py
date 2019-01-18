@@ -54,5 +54,3 @@ def validate_reading_quality(reading_quality_good,reading_quality_bad):
 		return {"status":True}
 	else:
 		return {"status":False,"message":"You can only select one Reading Quality (Good or Bad)"}
-	
-

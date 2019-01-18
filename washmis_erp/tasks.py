@@ -149,5 +149,3 @@ def automatic_meter_reading_demo():
 				frappe.db.commit()
 			except Exception as err:
 				return err
-				
-		

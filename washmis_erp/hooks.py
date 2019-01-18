@@ -90,33 +90,42 @@ app_license = "MIT"
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-	"cron": {
-		"0 0 * * *": [ #every day at midnight
-			"washmis_erp.tasks.automatic_meter_reading_demo"
-			]
-		},
-		"0 0 1 * *": [ #every first day of the month at midnight
-		]
-	}
-
 # scheduler_events = {
-# 	"all": [
-# 		"washmis_erp.tasks.all"
-# 	],
-# 	"daily": [
-# 		"washmis_erp.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"washmis_erp.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"washmis_erp.tasks.weekly"
-# 	]
-# 	"monthly": [
-# 		"washmis_erp.tasks.monthly"
-# 	]
+# 	"cron": {
+# 		"0 0 * * *": [ #every day at midnight
+# 			'''comment the task below for now until I test it fully to
+# 			avoid breaking code
+# 			"washmis_erp.tasks.automatic_meter_reading_demo"
+# 			'''
+# 			],
+# 		"0 0 1 * *": [ #every first day of the month at midnight
+# 		],
+# 		"* * * * *": [ 
+# 			#runs every minute
+# 			"washmis_erp.tasks.test_task"
+# 		]
+
+# 	}
 # }
+
+scheduler_events = {
+	"all": [
+# 			"washmis_erp.tasks.all"
+			# "washmis_erp.tasks.test_task"
+	],
+	"daily": [
+# 		"washmis_erp.tasks.daily"
+	],
+	"hourly": [
+# 		"washmis_erp.tasks.hourly"
+	],
+	"weekly": [
+# 		"washmis_erp.tasks.weekly"
+	]
+# 	"monthly": [
+# # 		"washmis_erp.tasks.monthly"
+# 	]
+}
 
 # Testing
 # -------

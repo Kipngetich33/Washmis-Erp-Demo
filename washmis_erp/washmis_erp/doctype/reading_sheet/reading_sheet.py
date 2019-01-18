@@ -432,7 +432,8 @@ def update_system_values_for_route(self):
 			filters = {
 				"target_document": "Reading Sheet",
 				"target_record":self.route,
-			})
+			}
+		)
 
 	if(len(system_value_for_route)>0):
 		new_system_value = frappe.get_doc("System Values", system_value_for_route[0].name)
