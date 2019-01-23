@@ -75,42 +75,14 @@ class ReadingSheet(Document):
 			# a value exists hence a  comparison is required 
 			current_billing_period = self.get_period(self.billing_period)
 			last_saved_period = self.get_period(sytem_values_exist["message"].description)
-			self.run_functions2(self.compare_period_ranks(current_billing_period,last_saved_period))
-		else:
-			# go ahead and save it since no for root exists yet
-			pass
+			comparison_results = self.compare_period_ranks(current_billing_period,last_saved_period)
+			if(comparison_results["status"]== False):
+				frappe.throw(comparison_results["message"])
 			
-		# 	system_values_exists = self.get_last_system_values_of_route2()
-		# name_of_found_period = None # initialize to none
-
-		# if(system_values_exists["status"]):
-		# 	name_of_found_period = self.get_period(system_values_exists["message"].description)
-		# else:
-		# 	# create new or check the most appropriate way to handle it
-		# 	pass
-		# # in_right_order = self.validate_reading_sheets_order()
-
-
-
-		'''
-		# (iv) If Reading Sheet's billing period in order check if its already saved
-		reading_already_saved = False
-		if(in_right_order):
-			reading_already_saved = if_reading_sheet_exist(self.name)
-		
-		if(reading_already_saved):
-			# save customer previous readings but do change system values
+			# save current reading and update system values
 			save_current_readings(self.meter_reading_sheet)
-		else:
-			# save and change system values, customer readings
-			save_current_readings(self.meter_reading_sheet)
-		
-		# Update system values for route
-		# You can only update this because all the other test about the
-		# order have already passed
-		update_system_values_for_route(self)
-		'''
-		# frappe.throw("pause")
+			update_system_values_for_route(self)
+	
 		
 	def on_update(self):
 		pass
@@ -131,70 +103,79 @@ class ReadingSheet(Document):
 		Function that checks if all the required fields 
 		have been filled
 		'''
-		try:
+		if(self.meter_reading_sheet):
 			if(len(self.meter_reading_sheet)== 0):
 				return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
-			else:
+			elif(len(self.meter_reading_sheet)>0):
 				return {"status":True}
-		except:
+			else:
+				return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
+		elif(self.meter_reading_sheet == None):
 			return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
+		
 
 	def validate_customer_details_exists(self):
 		'''
 		Function that check that customer_details_exists
 		function
 		'''
-		for i in range(len(self.meter_reading_sheet)):
-	 		row_to_check = self.meter_reading_sheet[i]
+		if(self.meter_reading_sheet):
+			for i in range(len(self.meter_reading_sheet)):
+				row_to_check = self.meter_reading_sheet[i]
 
-				#check if account_no exist
-			if not (row_to_check.account_no):
-				message = "Account No for Customer {} Does Not Exist".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
+					#check if account_no exist
+				if not (row_to_check.account_no):
+					message = "Account No for Customer {} Does Not Exist".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
 
-				# check if previous_reading exist
-			elif not(row_to_check.previous_manual_reading):
-				message = "Previous Readings for Customer {} Does Not Exist".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
+					# check if previous_reading exist
+				elif not(row_to_check.previous_manual_reading):
+					message = "Previous Readings for Customer {} Does Not Exist".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
 
-				# check for current readings 
-			elif not(row_to_check.current_manual_readings):
-				message = "Current Readings for Customer {} Does Not Exist".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
+					# check for current readings 
+				elif not(row_to_check.current_manual_readings):
+					message = "Current Readings for Customer {} Does Not Exist".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
 
-				# check for manual consumption
-			elif not(row_to_check.manual_consumption):
-				message = "Manual consumption for Customer {} Does Not Exist".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
-			else:
-				return {"status":True}
+					# check for manual consumption
+				elif not(row_to_check.manual_consumption):
+					message = "Manual consumption for Customer {} Does Not Exist".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
+				else:
+					return {"status":True}
+		else:
+			return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
 
 	def validate_readings(self):
 		'''
 		Function that checks to ensure that readings 
 		dont contain obvious error eg. negatives
 		'''
-		for i in range(len(self.meter_reading_sheet)):
-	 		row_to_check = self.meter_reading_sheet[i]
+		if(self.meter_reading_sheet):
+			for i in range(len(self.meter_reading_sheet)):
+				row_to_check = self.meter_reading_sheet[i]
 
-			if(int(row_to_check.previous_manual_reading)<0):
-				message = "Previous Manual Readings for Customer {} is Negative".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
-			elif(int(row_to_check.current_manual_readings)<0):
-				message = "Current Manual Readings for Customer {} is Negative".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
-			elif(int(row_to_check.manual_consumption)<0):
-				message = "Manual Consumption for Customer {} is Negative".\
-				format(row_to_check.customer_name)
-				return {"status":False,"message":message}
-			else:
-				return {"status":True}
+				if(int(row_to_check.previous_manual_reading)<0):
+					message = "Previous Manual Readings for Customer {} is Negative".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
+				elif(int(row_to_check.current_manual_readings)<0):
+					message = "Current Manual Readings for Customer {} is Negative".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
+				elif(int(row_to_check.manual_consumption)<0):
+					message = "Manual Consumption for Customer {} is Negative".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
+				else:
+					return {"status":True}
+		else:
+			return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
 
 	def validate_system_values_for_route(self):
 		'''
@@ -230,25 +211,6 @@ class ReadingSheet(Document):
 		new_system_value.description = self.billing_period
 		new_system_value.insert()
 
-	def validate_reading_sheets_order(self):
-		'''
-		Function that checks if the current reading 
-		sheet obeys the ranks of billing periods in 
-		terms of dates
-		args:
-			self
-		output:
-			greater or less than (supposed period)
-		'''
-		last_saved_period = self.get_last_system_values_of_route().description
-		last_period = self.get_period(last_saved_period)
-		current_period = self.get_period(self.billing_period)
-		
-		# compare_period_ranks(current_period,last_period)
-		if(self.compare_period_ranks):
-			return True
-		else:
-			return False
 
 	def get_last_system_values_of_route(self):
 		'''
@@ -302,25 +264,23 @@ class ReadingSheet(Document):
 	def compare_period_ranks(self,current_period,last_period):
 		'''
 		function that checks if the current billing period 
-		start date is exactly the same as the end date of last
+		start date is exactly one day after the end date of last
 		reading sheet or begging of billing period
 		'''
 		c_start = current_period.start_date_of_billing_period
 		c_end = current_period.end_date_of_billing_period
+		l_start = last_period.start_date_of_billing_period
 		l_end = last_period.end_date_of_billing_period
-
-		print "*"*100
-		print c_start
-		print c_end
-		print l_end
 
 		correct_start_of_next_period = l_end + datetime.timedelta(days = 1)
 		correct_next_end_day = monthrange(correct_start_of_next_period.year,correct_start_of_next_period.month)[1]
 		correct_next_end_date = datetime.datetime(correct_start_of_next_period.year,correct_start_of_next_period.month,correct_next_end_day)
+		correct_next_end_date = correct_next_end_date.date()
 
+	
 		if(c_start < correct_start_of_next_period or c_end < correct_next_end_date):
 			message = "The Last Saved Reading Sheet was For Billing Period {} \
-					You Cannot Create Reading Sheets For Earlier Periods".format(last_period.name)
+					You Cannot Create Reading Sheets For Same or Time Earlier Periods".format(last_period.name)
 			return {"status":False, "message":message}
 		elif(c_start > correct_start_of_next_period or c_end > correct_next_end_date):
 			message = "Please Create a reading sheet for the previous period first"

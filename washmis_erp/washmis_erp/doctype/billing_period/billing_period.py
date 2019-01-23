@@ -33,7 +33,7 @@ class BillingPeriod(Document):
 		'''
 		# validate fields
 		self.run_functions(self.check_field_are_filled)
-		# self.run_functions(self.validate_start_and_end_dates)
+		self.run_functions(self.validate_start_and_end_dates)
 
 	def check_field_are_filled(self):
 		'''

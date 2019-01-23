@@ -20,4 +20,6 @@ QUnit.test("test: Reading Sheet", function (assert) {
 		() => done()
 	]);
 
+	console.log("Running Unit Tests in JS")
+
 });
