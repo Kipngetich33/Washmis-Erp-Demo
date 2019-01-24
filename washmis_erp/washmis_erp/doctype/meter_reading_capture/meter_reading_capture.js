@@ -59,85 +59,105 @@ function get_customer_readings(route,billing_period){
 					route:route,
 					billing_period:billing_period
 				},
-		fields:["tracker_number"]
+		fields:["*"]
 		},
 		callback: function(response) {	
-			// fetch_customer_with_tracker(response.message.tracker_number)
+			if(response.message.length == 0){
+				alert_message("No reading Sheet Exists for selected Route and Billing Periond")
+			}
+			else if(response.message.length > 0){
+				// call a function to get customers in reading sheet
+				
+				retrive_customer_details(response.message)
+		
+					
+			}
+			else{
+				alert_message("Something went wrong while retrieving Reading Sheets")
+			}
 
-			frappe.call({
-				method: "frappe.client.get_list",
-				args: 	{
-						doctype: "Meter Reading Sheet",
-						parent: "Reading Sheet",
-						filters: {
-							reading_sheet_no:response.message.tracker_number
-						},
-				fields:["walk_no","previous_automatic_readings","previous_manual_reading","customer_name",
-						"type_of_customer","meter_reader","system_no","reading_sheet_no","bill_category",
-						"reading_date","dma","reading_code","meter_number","comments","tel_no","type_of_bill",
-						"account_no","manual_consumption","current_manual_readings"
-						]
-				},
-				callback: function(response) {
-					if(response.message.length == 0 ){
-						console.log("No existing customers yet")
-						// msgprint("No Reading Sheet for Route and Period, Prepare One from Reading Sheet")
-						// message_to_pass = "No Reading Sheet Matches Selected Route and Billing Period, Would You Like To Create a new Reading Sheet?"
-						confirm_redirect_to_reading_sheet()
 
-						function action_function(){
-							console.log("confirmed")
-						}
-					}
-					else{
-						console.log("there are customers existing")
-						cur_frm.clear_table("meter_reading_sheet"); 
-						cur_frm.refresh_fields();
-						$.each(response.message || [], function(i, v){
-							console.log("the v")
-							console.log(v)
-							// create rows 
-							cur_frm.grids[0].grid.add_new_row(null,null,false);
-							var newrow = cur_frm.grids[0].grid.grid_rows[cur_frm.grids[0].grid.grid_rows.length - 1].doc;
-							
-							// // set values from customer
-							newrow.customer_name = v.customer_name
-							newrow.system_no = v.system_no
-							newrow.account_no= v.account_no
-							newrow.dma=v.dma	
-							newrow.meter_number=v.meter_serial_no
-							newrow.walk_no=v.walk_no	
-							newrow.reading_date=v.reading_date
-							newrow.tel_no=v.tel_no
-							newrow.type_of_customer = v.customer_type
-							newrow.bill_category= v.bill_category
-							newrow.type_of_bill= v.type_of_bill
-							newrow.reading_code=v.reading_code
-							newrow.comments=v.comments
-							newrow.reading_sheet_no = v.reading_sheet_no
-							newrow.billing_period=v.billing_period
-							newrow.route=cur_frm.doc.route
-							newrow.meter_reader=v.meter_reader
-							newrow.previous_manual_reading=v.previous_manual_reading
-							newrow.current_manual_readings = v.current_manual_readings
-							newrow.manual_consumption = v.manual_consumption
-							cur_frm.refresh_fields();
-						})
-
-					}
-				}
-			})
+			
 		}	
 	});
 }
 
 
+function retrive_customer_details(current_reading_sheet){
+	console.log("name")
+	frappe.call({
+		method: "frappe.client.get_list",
+		args: 	{
+				parent:"Reading Sheet",
+				doctype: "Meter Reading Sheet",
+				filters: {
+					parent:current_reading_sheet[0]["name"],
+					billing_period:current_reading_sheet[0]["billing_period"]
+				},
+			fields:["*"]
+		},
+		callback: function(response) {
+
+			if(response.message.length == 0){
+				alert_message("No customers exists for selected Route and biling period")
+			}
+			else if(response.message.length > 0){
+				console.log("there are customers existing")
+				console.log(response)
+
+				cur_frm.clear_table("meter_reading_sheet"); 
+				cur_frm.refresh_fields();
+				$.each(response.message || [], function(i, v){
+					// create rows 
+					cur_frm.grids[0].grid.add_new_row(null,null,false);
+					var newrow = cur_frm.grids[0].grid.grid_rows[cur_frm.grids[0].grid.grid_rows.length - 1].doc;
+					
+					// // set values from customer
+					newrow.customer_name = v.customer_name
+					newrow.system_no = v.system_no
+					newrow.account_no= v.account_no
+					newrow.dma=v.dma	
+					newrow.meter_number=v.meter_serial_no
+					newrow.walk_no=v.walk_no	
+					newrow.reading_date=v.reading_date
+					newrow.tel_no=v.tel_no
+					newrow.type_of_customer = v.type_of_customer
+					newrow.bill_category= v.bill_category
+					newrow.type_of_bill= v.type_of_bill
+					newrow.reading_code=v.reading_code
+					newrow.comments=v.comments
+					newrow.reading_sheet_no = v.reading_sheet_no
+					newrow.billing_period=v.billing_period
+					newrow.route=cur_frm.doc.route
+					newrow.meter_reader=v.meter_reader
+					newrow.previous_manual_reading=v.previous_manual_reading
+					newrow.current_manual_readings = v.current_manual_readings
+					newrow.manual_consumption = v.manual_consumption
+					cur_frm.refresh_fields();
+				})
+				
+			}
+			else{
+				alert_message("Something went wrong while retriving customer details from reading sheet")
+			}
+		
+		}
+	})
+}
+
+
+/* end of the general functions section
+// =================================================================================================
+/* This section  contains functions that are triggered by the form action refresh or
+reload to perform various action*/
 
 /* function that generates sales when the finish capture button is clicked*/
 function finish_capture(){
 	frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 		cur_frm.save();/* save the form first*/
-
+		alert_message("This functionality is under development")
+		alert_message("Document Saved")
+		/*
 		if(cur_frm.doc.meter_reading_sheet.length>0){
 			var x=0
 			cur_frm.doc.meter_reading_sheet.forEach(function(row){ 
@@ -159,14 +179,14 @@ function finish_capture(){
 		else{
 			alert_message("No Active Customer for "+ cur_frm.doc.route_and_billing_period)
 		}
+		*/
 	});
 }
 
-
-/* end of the general functions section
-// =================================================================================================
-/* This section  contains functions that are triggered by the form action refresh or
-reload to perform various action*/
+/* function that is called when send to mobile button is clicked*/
+frappe.ui.form.on("Meter Reading Capture", "send_to_a_mobile_device", function(frm) {
+	console.log("this functionality is not yet fully developed")
+});
 
 /* function that generates sales when the export as excel sheet button is clicked*/
 frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
@@ -175,6 +195,7 @@ frappe.ui.form.on("Meter Reading Capture", "export_as_csv_file", function(frm) {
 	// frappe.model.set_value("reference_doctype", "Meter Reading Capture")
 	// cur_frm.save();
 });
+
 
 
 /*this is the refresh function triggered by refreshing the form*/

@@ -18,7 +18,6 @@ frappe.ui.form.on("Reading Sheet", "export_file", function(frm) {
 function go_to_meter_reading_capture(){
 	// when the send to meter reading button is clicked
 	frappe.ui.form.on("Reading Sheet", "go_to_meter_reading_capture", function() {
-		cur_frm.save(); /* save the form first */
 		frappe.set_route("Form", "Meter Reading Capture","New Meter Reading Sheet 1")
 	})
 }
@@ -94,6 +93,7 @@ function get_customer_with_no(system_no){
 			filters: {"system_no":system_no} 
 		},
 		callback: function(response) {
+			
 			// create rows
 			cur_frm.grids[0].grid.add_new_row(null,null,false);
 			var newrow = cur_frm.grids[0].grid.grid_rows[cur_frm.grids[0].grid.grid_rows.length - 1].doc;
