@@ -92,7 +92,7 @@ app_license = "MIT"
 
 # scheduler_events = {
 # 	"cron": {
-# 		"0 0 * * *": [ #every day at midnight
+# 		"* * * * *": [ #every day at midnight
 # 			'''comment the task below for now until I test it fully to
 # 			avoid breaking code
 # 			"washmis_erp.tasks.automatic_meter_reading_demo"
