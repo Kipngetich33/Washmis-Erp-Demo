@@ -12,7 +12,6 @@ class BillingPeriod(Document):
 	This is the Billing Period Doctype controller 
 	class
 	'''
-
 	def run_functions(self,function_to_run):
 		'''
 		function that runs all other validation function 
@@ -50,8 +49,6 @@ class BillingPeriod(Document):
 			return {"status":False,"message":"The {} field is mandatory".format("Start Date of Billing Period")}
 		elif(self.end_date_of_billing_period == None):
 			return {"status":False,"message":"The {} field is mandatory".format("End Date of Billing Period")}
-		elif(self.period_rank == None or self.period_rank == 0):
-			return {"status":False,"message":"The {} field is mandatory".format("Period Rank")}
 		else:
 			return {"status":True}
 

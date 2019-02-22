@@ -59,7 +59,6 @@ class ReadingSheet(Document):
 		self.run_functions2(self.validate_customer_details_exists)
 		#validate readings
 		self.run_functions2(self.validate_readings)
-
 		# validate system values for route or create one if none exists
 
 		# sytem_values_exist = self.validate_system_values_for_route()
@@ -82,7 +81,8 @@ class ReadingSheet(Document):
 			# save current reading and update system values
 			save_current_readings(self.meter_reading_sheet)
 			update_system_values_for_route(self)
-	
+
+		# frappe.throw("pause")
 		
 	def on_update(self):
 		pass
@@ -94,7 +94,7 @@ class ReadingSheet(Document):
 		(i) Deny Deletion to avoid data loss
 		'''
 		# (i) Deny deletion to avoid loss of data
-		# frappe.throw("You Can Only Modify a Reading Sheet Once its Created")
+		frappe.throw("You Can Only Update a Reading Sheet Once its Created")
 		pass
 
 	# the section below contains functions used by the validate function
@@ -120,34 +120,35 @@ class ReadingSheet(Document):
 		function
 		'''
 		if(self.meter_reading_sheet):
-			for i in range(len(self.meter_reading_sheet)):
-				row_to_check = self.meter_reading_sheet[i]
-
-					#check if account_no exist
+			print "*"*80
+			# print self.meter_reading_sheet
+			my_counter = 0
+			for i in self.meter_reading_sheet:
+				row_to_check = i
 				if not (row_to_check.account_no):
 					message = "Account No for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
 
-					# check if previous_reading exist
-				elif not(row_to_check.previous_manual_reading):
+				# check if previous_reading exist
+				elif(row_to_check.previous_manual_reading == None ):
 					message = "Previous Readings for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
 
-					# check for current readings 
+				# check for current readings 
 				elif not(row_to_check.current_manual_readings):
 					message = "Current Readings for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
 
-					# check for manual consumption
+				# check for manual consumption
 				elif not(row_to_check.manual_consumption):
 					message = "Manual consumption for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
-				else:
-					return {"status":True}
+			
+			return {"status":True}
 		else:
 			return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
 
@@ -251,7 +252,7 @@ class ReadingSheet(Document):
 		name of the period's name is provided
 		'''
 		requested_period_values = frappe.get_list("Billing Period",
-				fields=["name","period_rank","end_date_of_billing_period","start_date_of_billing_period"],
+				fields=["*"],
 				filters = {
 					"name": name_of_billing_period,
 				})
@@ -277,18 +278,22 @@ class ReadingSheet(Document):
 		correct_next_end_date = datetime.datetime(correct_start_of_next_period.year,correct_start_of_next_period.month,correct_next_end_day)
 		correct_next_end_date = correct_next_end_date.date()
 
-	
-		if(c_start < correct_start_of_next_period or c_end < correct_next_end_date):
-			message = "The Last Saved Reading Sheet was For Billing Period {} \
-					You Cannot Create Reading Sheets For Same or Time Earlier Periods".format(last_period.name)
-			return {"status":False, "message":message}
-		elif(c_start > correct_start_of_next_period or c_end > correct_next_end_date):
-			message = "Please Create a reading sheet for the previous period first"
-			return {"status":False, "message":message}
-		elif(c_start == correct_start_of_next_period and c_end == correct_next_end_date):
-			return{"status":True}
+		print "check if new"
+		if(self.is_new() == True):
+			if(c_start < correct_start_of_next_period or c_end < correct_next_end_date):
+				message = "The Last Saved Reading Sheet was For Billing Period {} \
+						You Cannot Create Reading Sheets For Same or Time Earlier Periods".format(last_period.name)
+				return {"status":False, "message":message}
+			elif(c_start > correct_start_of_next_period or c_end > correct_next_end_date):
+				message = "Please Create a reading sheet for the previous period first"
+				return {"status":False, "message":message}
+			elif(c_start == correct_start_of_next_period and c_end == correct_next_end_date):
+				return{"status":True}
+			else:
+				return {"staus":False,"message":"Something went wrong please check and try again"}
 		else:
-			return {"staus":False,"message":"Something went wrong please check and try again"}
+			# the document is already saved user wants to update
+			return{"status":True}
 
 	def get_correct_end_dates(self,start_date):
 		'''
@@ -411,7 +416,7 @@ def get_period_with_start_date(correct_start_of_next_period):
 	start date of billing period
 	'''
 	requested_period_values = frappe.get_list("Billing Period",
-			fields=["name","period_rank","end_date_of_billing_period","start_date_of_billing_period"],
+			fields=["*"],
 			filters = {
 				"start_date_of_billing_period": correct_start_of_next_period,
 			})
