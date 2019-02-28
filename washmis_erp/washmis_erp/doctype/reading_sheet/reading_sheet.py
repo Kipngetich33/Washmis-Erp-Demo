@@ -86,7 +86,7 @@ class ReadingSheet(Document):
 		
 	def on_update(self):
 		pass
-	
+
 	def on_trash(self):
 		'''
 		Contoller function called before a Reading Sheet
@@ -120,9 +120,6 @@ class ReadingSheet(Document):
 		function
 		'''
 		if(self.meter_reading_sheet):
-			print "*"*80
-			# print self.meter_reading_sheet
-			my_counter = 0
 			for i in self.meter_reading_sheet:
 				row_to_check = i
 				if not (row_to_check.account_no):
@@ -278,7 +275,6 @@ class ReadingSheet(Document):
 		correct_next_end_date = datetime.datetime(correct_start_of_next_period.year,correct_start_of_next_period.month,correct_next_end_day)
 		correct_next_end_date = correct_next_end_date.date()
 
-		print "check if new"
 		if(self.is_new() == True):
 			if(c_start < correct_start_of_next_period or c_end < correct_next_end_date):
 				message = "The Last Saved Reading Sheet was For Billing Period {} \

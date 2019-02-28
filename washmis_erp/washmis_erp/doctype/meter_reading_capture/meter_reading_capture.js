@@ -155,8 +155,11 @@ reload to perform various action*/
 function finish_capture(){
 	frappe.ui.form.on("Meter Reading Capture", "finish_capture", function(frm) {
 		cur_frm.save();/* save the form first*/
-		alert_message("This functionality is under development")
-		alert_message("Document Saved")
+		// alert_message("This functionality is under development")
+		// alert_message("Document Saved")
+		
+		// the code below is used to set root options in order to loop through sales 
+		// invoices
 		/*
 		if(cur_frm.doc.meter_reading_sheet.length>0){
 			var x=0
