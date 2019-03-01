@@ -8,39 +8,26 @@
 which are called is the form triggered functions section*/
 
 // global variables
-var required_fields = {customer: ["area","zone","route","customer_previous_readings"],
-						billing_period:["reading_sheet_to_amend","sales_invoice_to_amend",
-							"previous_reading_sheet_value","previous_invoice_amount"
-						],
-						new_reading:["new_previous_customer_readings","new_reading_sheet_value",
-							"new_sales_invoice_value"
-						],
-						all:["area","zone","route","customer_previous_readings",
-							"reading_sheet_to_amend","sales_invoice_to_amend",
-							"previous_reading_sheet_value","previous_invoice_amount",
-							"new_previous_customer_readings","new_reading_sheet_value",
-							"new_sales_invoice_value"
-						]
+var required_fields = {customer: ["billing_period"],
+						billing_period:["new_readings"],
+						new_reading:["adjust_readings"],
+						all:["billing_period","new_readings","adjust_readings"]
 					}
 
 function hide_unhide_on_refresh(frm,required_fields){
-	console.log("inside hide unhide")
 	// hide all fields
 	hide_unhide_fields(frm,required_fields["all"],false)
 	if(frm.doc.customer){
-		console.log("Customer has been filled")
 		// hide_unhide_fields(frm,required_fields["all"],false)
 		hide_unhide_fields(frm,required_fields["customer"],true)
 	}
 
 	if(frm.doc.billing_period){
-		console.log("Period has been filled")
 		// hide_unhide_fields(frm,required_fields["all"],false)
 		hide_unhide_fields(frm,required_fields["billing_period"],true)
 	}
 
 	if(frm.doc.new_readings){
-		console.log("Period has been filled")
 		// hide_unhide_fields(frm,required_fields["all"],false)
 		hide_unhide_fields(frm,required_fields["new_readings"],true)
 	}
@@ -50,9 +37,7 @@ function hide_unhide_on_refresh(frm,required_fields){
 
 /*function that hides fields ,called on refresh*/
 function hide_unhide_fields(frm,list_of_fields,hide_or_unhide){
-	console.log("inside the actual hide unhide")
 	for(var i = 0; i < list_of_fields.length; i++){
-		console.log(list_of_fields[i]+" "+hide_or_unhide)
 		frm.toggle_display(list_of_fields[i],hide_or_unhide)
 	}
 }
@@ -157,6 +142,7 @@ frappe.ui.form.on("Meter Readings Adjustment","customer",function(frm){
 	if(frm.doc.customer){
 		// fill territory fields
 		fill_territory_fields(frm.doc.customer,frm)
+		frm.refresh()
 	}
 	else{
 		// no customer was selected ( do nothing)
@@ -169,6 +155,7 @@ frappe.ui.form.on("Meter Readings Adjustment","billing_period",function(frm){
 	if(frm.doc.billing_period){
 		// fill territory fields
 		fill_billing_period_related_fields(frm.doc.customer,frm.doc.billing_period,frm)
+		frm.refresh()
 	}
 	else{
 		// no billing period was selected ( do nothing)
@@ -180,16 +167,21 @@ frappe.ui.form.on("Meter Readings Adjustment","new_readings",function(frm){
 	if(frm.doc.billing_period){
 		// fill territory fields
 		new_readings_related_fields(frm.doc.customer,frm.doc.billing_period,frm)
+		frm.refresh()
 	}
 	else{
 		// no billing period was selected ( do nothing)
 	}
 })
 
+// function that initiates the reading sheet adjustmet process
+frappe.ui.form.on("Meter Readings Adjustment", "adjust_readings", function(frm) {
+	cur_frm.save();
+})
+
+
 // function that runs on refresh
 frappe.ui.form.on("Meter Readings Adjustment", "refresh", function(frm) {
 	console.log("Refreshing !")
-	// hide_unhide_on_refresh(frm,required_fields)
-
-
+	hide_unhide_on_refresh(frm,required_fields)
 })
