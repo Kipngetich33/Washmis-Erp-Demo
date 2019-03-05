@@ -21,15 +21,22 @@ class MeterReadingsAdjustment(Document):
 		'''
 		Function that runs when the document is saved
 		'''
-		print "*"*80
 		# check all required fields are available
 		# check_required_fields()
 
 		# Adjust customer's previous reading
 		adjust_customer_previous_reading(self.customer,self.new_readings)
+		# update adjusted readings on meter reading adjustment
+		self.new_previous_customer_readings = self.new_readings
 		
 		# Adjust previous reading sheet's values
 		adjust_reading_sheet_values(self.customer,self.billing_period,self.new_readings)
+		# update adjusted previous reading sheet values
+		self.adjusted_reading_sheet_value = self.new_readings
+		self.new_reading_sheet_value  = self.new_readings
+
+		# update adjusted consumption values on meter reading adjustment
+		self.adjusted_consumption = int(self.new_readings) - int(self.previous_readings)
 
 		# Adjust sales invoice values
 		if(self.sales_invoice_to_amend):
@@ -37,7 +44,7 @@ class MeterReadingsAdjustment(Document):
 		else:
 			# no sales invoice matching exist yet 
 			pass
-		
+
 	def on_trash(self):
 		pass
 
@@ -131,7 +138,6 @@ def adjust_sales_invoice_values(customer,billing_period,new_readings):
 	# calculate quantity and items to reduce
 	calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings)
 
-
 def get_sales_invoice(customer,billing_period):
 	'''
 	Function that gets the sales invoice linked
@@ -147,10 +153,10 @@ def get_sales_invoice(customer,billing_period):
 	if(len(sales_invoices) == 1):
 		return sales_invoices[0]
 	elif(len(sales_invoices)<1):
-		message = "Sales Invoice Matching Customer {} and Billint Period {} Does Not Exist".format(customer,billing_period)
+		message = "Sales Invoice Matching Customer {} and Billing Period {} Does Not Exist".format(customer,billing_period)
 		frappe.throw(message)
 	elif(len(sales_invoices)>1):
-		message = "There Exist More than One Sales Invoice Matching Customer {} and Billint Period {}".format(customer,billing_period)
+		message = "There Exist More than One Sales Invoice Matching Customer {} and Billing Period {}".format(customer,billing_period)
 		frappe.throw(message)
 
 
@@ -214,11 +220,15 @@ def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_in
 	doc.return_against = fetched_sales_invoice.name
 
 	reduction_items = reduction_items
+	items_counter = 0 
 	for item in reduction_items:
 		diff = 0
 		if(item.min_quantity == 0):
-			diff = 1
+			diff = 0
 		elif(item.max_quantity >= fetched_sales_invoice.consumption):
+			# count number of items
+			items_counter +=1
+
 			if(item.min_quantity <= new_consumption and item.max_quantity >= new_consumption):
 				# use the difference between previous consumption and current consumption
 				diff = fetched_sales_invoice.consumption - new_consumption
@@ -226,6 +236,9 @@ def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_in
 				# use the difference between the previous consumption min_quantity
 				diff = (fetched_sales_invoice.consumption - item.min_quantity)+1
 		else:
+			# count number of items
+			items_counter +=1
+
 			if(item.min_quantity <= new_consumption and item.max_quantity >= new_consumption):
 				# use the difference between max_quantity and new_consumption
 				diff = item.max_quantity - new_consumption
@@ -247,10 +260,15 @@ def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_in
 				'income_account': 'Sales - UL',
 				'cost_center': 'Main - UL'
 			})
+	
 	# save the invoice
-	doc.insert()
-	#submit the invoice
-	doc.submit()
+	if(items_counter == 0):
+		# update the correspoding sales invoice
+		pass
+	else:
+		doc.insert()
+		#submit the invoice
+		doc.submit()
 
 	
 

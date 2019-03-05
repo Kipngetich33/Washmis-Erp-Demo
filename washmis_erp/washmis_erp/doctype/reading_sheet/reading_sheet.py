@@ -43,7 +43,6 @@ class ReadingSheet(Document):
 		else:
 			frappe.throw(if_value["message"])
 
-
 	def validate(self):
 		'''
 		checks:
@@ -66,6 +65,8 @@ class ReadingSheet(Document):
 		if(sytem_values_exist["status"]):
 			pass
 		else:
+			# update customer readings
+			save_current_readings(self.meter_reading_sheet)
 			# create new system values
 			self.create_new_system_values()
 
@@ -94,7 +95,7 @@ class ReadingSheet(Document):
 		(i) Deny Deletion to avoid data loss
 		'''
 		# (i) Deny deletion to avoid loss of data
-		frappe.throw("You Can Only Update a Reading Sheet Once its Created")
+		# frappe.throw("You Can Only Update a Reading Sheet Once its Created")
 		pass
 
 	# the section below contains functions used by the validate function
@@ -134,13 +135,13 @@ class ReadingSheet(Document):
 					return {"status":False,"message":message}
 
 				# check for current readings 
-				elif not(row_to_check.current_manual_readings):
+				elif(row_to_check.current_manual_readings == None):
 					message = "Current Readings for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
 
 				# check for manual consumption
-				elif not(row_to_check.manual_consumption):
+				elif(row_to_check.manual_consumption == None):
 					message = "Manual consumption for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}

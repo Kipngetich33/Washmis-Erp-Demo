@@ -18,6 +18,7 @@ frappe.ui.form.on("Reading Sheet", "export_file", function(frm) {
 function go_to_meter_reading_capture(){
 	// when the send to meter reading button is clicked
 	frappe.ui.form.on("Reading Sheet", "go_to_meter_reading_capture", function() {
+		cur_frm.save();
 		frappe.set_route("Form", "Meter Reading Capture","New Meter Reading Sheet 1")
 	})
 }

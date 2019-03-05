@@ -10,7 +10,7 @@ which are called is the form triggered functions section*/
 // global variables
 var required_fields = {customer: ["billing_period"],
 						billing_period:["new_readings"],
-						new_reading:["adjust_readings"],
+						// new_reading:["adjust_readings"],
 						all:["billing_period","new_readings","adjust_readings"]
 					}
 
@@ -27,10 +27,10 @@ function hide_unhide_on_refresh(frm,required_fields){
 		hide_unhide_fields(frm,required_fields["billing_period"],true)
 	}
 
-	if(frm.doc.new_readings){
-		// hide_unhide_fields(frm,required_fields["all"],false)
-		hide_unhide_fields(frm,required_fields["new_readings"],true)
-	}
+	// if(frm.doc.new_readings){
+	// 	// hide_unhide_fields(frm,required_fields["all"],false)
+	// 	hide_unhide_fields(frm,required_fields["new_readings"],true)
+	// }
 	
 }
 
@@ -75,14 +75,18 @@ function fill_billing_period_related_fields(customer_name,billing_period,frm){
 			filters: {'parenttype':"Reading Sheet",'customer_name':customer_name,
 				"billing_period":billing_period
 			},
-			'fieldname': ["parent","current_manual_readings"]
+			'fieldname': ["parent","current_manual_readings","manual_consumption",
+				"previous_manual_reading"
+			]
 		},
 		callback: function(r) {
 			if (!r.exc) {
 				// fill billing period related fields
 				// fill territory fields
 				frm.set_value("reading_sheet_to_amend", r.message.parent)
+				frm.set_value("previous_readings", r.message.previous_manual_reading)
 				frm.set_value("previous_reading_sheet_value", r.message.current_manual_readings)
+				frm.set_value("previous_consumption", r.message.manual_consumption)
 			}
 		}
 	});
@@ -175,9 +179,9 @@ frappe.ui.form.on("Meter Readings Adjustment","new_readings",function(frm){
 })
 
 // function that initiates the reading sheet adjustmet process
-frappe.ui.form.on("Meter Readings Adjustment", "adjust_readings", function(frm) {
-	cur_frm.save();
-})
+// frappe.ui.form.on("Meter Readings Adjustment", "adjust_readings", function(frm) {
+// 	cur_frm.save();
+// })
 
 
 // function that runs on refresh
