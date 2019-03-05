@@ -24,6 +24,20 @@ class MeterReadingsAdjustment(Document):
 		# check all required fields are available
 		# check_required_fields()
 
+		# ensure that the adjustment is being done on the latest month
+		system_values_list = frappe.get_list("System Values",
+			fields=["*"],
+			filters = {
+				"target_document":"Reading Sheet",
+				"target_record":self.route,
+				"description":self.billing_period
+		})
+		if(len(system_values_list)==0):
+			frappe.throw("You Can Only Adjust the Reading of The Last Billing Period")
+		else:
+			pass
+
+
 		# Adjust customer's previous reading
 		adjust_customer_previous_reading(self.customer,self.new_readings)
 		# update adjusted readings on meter reading adjustment
@@ -40,8 +54,8 @@ class MeterReadingsAdjustment(Document):
 
 		# Adjust sales invoice values
 		if(self.sales_invoice_to_amend):
-			adjust_sales_invoice_values(self.customer,self.billing_period,self.new_readings)
-			
+			adjust_sales_invoice_values(self,self.customer,self.billing_period,self.new_readings)
+
 		else:
 			# no sales invoice matching exist yet 
 			pass
@@ -107,14 +121,14 @@ def adjust_reading_sheet_values(customer_name,billing_period,new_readings):
 	if(new_consumption >= 0):
 		pass
 	else:
-		frappe.throw("The Conusumption Value Cannot be Negative")
+		frappe.throw("The Consumption Value Cannot be Less then 0")
 	
 	# set new consumption
 	meter_reading_sheet_doc.manual_consumption = new_consumption
 	meter_reading_sheet_doc.save()
 
 
-def adjust_sales_invoice_values(customer,billing_period,new_readings):
+def adjust_sales_invoice_values(self,customer,billing_period,new_readings):
 	'''
 	Function that adjusts the values of the existing sales invoice
 	'''
@@ -137,8 +151,7 @@ def adjust_sales_invoice_values(customer,billing_period,new_readings):
 	invoice_name = fetched_sales_invoice.name
 	
 	# calculate quantity and items to reduce
-	calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings)
-
+	calulate_reduction(self,reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings)
 	
 
 def get_sales_invoice(customer,billing_period):
@@ -210,7 +223,7 @@ def get_reduction_items(fetched_item_docs,new_consumption):
 	return reduction_items
 
 
-def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings):
+def calulate_reduction(self,reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings):
 	'''
 	Function that determine the quantities of items 
 	to be reduced in the credit note
@@ -222,8 +235,12 @@ def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_in
 	doc.is_return = 1
 	doc.return_against = fetched_sales_invoice.name
 
+	# variable holders
 	reduction_items = reduction_items
 	items_counter = 0 
+	item_n_quantity = []
+
+	# loop through the reduction items
 	for item in reduction_items:
 		diff = 0
 		if(item.min_quantity == 0):
@@ -263,15 +280,49 @@ def calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_in
 				'income_account': 'Sales - UL',
 				'cost_center': 'Main - UL'
 			})
+
+			# add items reduced
+			item_n_quantity.append({"name":item.name,"qty":diff})
+
 	
 	# save the invoice
 	if(items_counter == 0):
-		# update the correspoding sales invoice
-		pass
+		# update the adjsuted sale invoice amount
+		doc = frappe.get_doc("Sales Invoice",fetched_sales_invoice.name)
+		self.new_sales_invoice_value = doc.total
+
 	else:
+		# calculate the adjusted sales invoice value
+		calculate_adjusted_sales_invoice_value(self,fetched_sales_invoice.name,item_n_quantity)
+
+		# save the credit note
 		doc.insert()
 		#submit the invoice
 		doc.submit()
 
-	
 
+def calculate_adjusted_sales_invoice_value(self,invoice_name,item_n_quantity):
+		found_credit_notes = frappe.get_list("Sales Invoice",
+			fields=["name"],
+			filters = {
+				"return_against":invoice_name
+		})
+		# calculate the amount the customer will not pay
+		total_reduction = 0
+		for credit_note in found_credit_notes:
+			doc = frappe.get_doc("Sales Invoice",credit_note.name)
+			doc.cancel()
+			doc.delete()
+
+		# calculate reduction from current items
+		for item in item_n_quantity:
+			# get the item
+			item_price_list = frappe.db.sql(""" SELECT price_list_rate FROM `tabItem Price` WHERE item_code = '{}' """.format(item["name"]))
+			item_price = item_price_list[0][0]
+			total_reduction += item_price * item["qty"]
+
+		self.new_sales_invoice_value = self.previous_invoice_amount + total_reduction
+
+		
+
+		
