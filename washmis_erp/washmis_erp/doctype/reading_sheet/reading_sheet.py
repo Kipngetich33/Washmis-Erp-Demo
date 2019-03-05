@@ -95,7 +95,7 @@ class ReadingSheet(Document):
 		(i) Deny Deletion to avoid data loss
 		'''
 		# (i) Deny deletion to avoid loss of data
-		# frappe.throw("You Can Only Update a Reading Sheet Once its Created")
+		frappe.throw("You Can Only Update a Reading Sheet Once its Created")
 		pass
 
 	# the section below contains functions used by the validate function

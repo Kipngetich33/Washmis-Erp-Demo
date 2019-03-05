@@ -41,6 +41,7 @@ class MeterReadingsAdjustment(Document):
 		# Adjust sales invoice values
 		if(self.sales_invoice_to_amend):
 			adjust_sales_invoice_values(self.customer,self.billing_period,self.new_readings)
+			
 		else:
 			# no sales invoice matching exist yet 
 			pass
@@ -137,6 +138,8 @@ def adjust_sales_invoice_values(customer,billing_period,new_readings):
 	
 	# calculate quantity and items to reduce
 	calulate_reduction(reduction_items,new_consumption,customer,fetched_sales_invoice,new_readings)
+
+	
 
 def get_sales_invoice(customer,billing_period):
 	'''
