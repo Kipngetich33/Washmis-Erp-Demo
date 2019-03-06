@@ -30,7 +30,6 @@ var field_to_hide_unhide = {
 		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
 		"meter_state","make_new_connection","no_other_connection_before",
 		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
-
 	]
 }
 
@@ -61,7 +60,7 @@ function hide_unhide_on_refresh(frm) {
 	if (frm.doc.type_of_sanitation == "Sewered") {
 		hide_function(frm, field_to_hide_unhide, "sewered_fields")
 	}
-	else if (frm.doc.type_of_sanitation == "OnSite") {
+	else if (frm.doc.type_of_sanitation == "Onsite") {
 		hide_function(frm, field_to_hide_unhide, "onsite_fields")
 	}
 	else if (frm.doc.type_of_sanitation == "None") {
