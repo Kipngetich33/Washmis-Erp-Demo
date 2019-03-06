@@ -9,7 +9,7 @@ from frappe.model.document import Document
 class MeterReadingsAdjustment(Document):
 	'''
 	This is the controller class for meter reading 
-	Sheets
+	Adjustement
 	'''
 	def validate(self):
 		'''

@@ -13,9 +13,37 @@ var field_to_hide_unhide = {
 		"premises_to_be_charged_sewer_services"
 	],
 	other:["other_specify"],
+	connected_with_company:["make_new_connection","deposit","new_connection_fee",
+		"the_status_of_the_connection_is_correct","no_other_connection_before",
+		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
+		"meter_state"
+	],
+	not_connected_with_company:["make_new_connection","no_other_connection_before",
+		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
+		"deposit","new_connection_fee"
+	],
 	all:["septic_tank","ventilated_improved_pit_latrine",
 		"other_traditional_pit_latrine","premises_to_be_charged_sewer_services",
-		"pour_flush_to_sewer","flush_to_sewer","other_specify"
+		"pour_flush_to_sewer","flush_to_sewer","other_specify",
+		"make_new_connection","deposit","new_connection_fee",
+		"the_status_of_the_connection_is_correct","no_other_connection_before",
+		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
+		"meter_state","make_new_connection","no_other_connection_before",
+		"there_is_an_appropriate_line_nearby","the_meter_position_will_be_as_per_the_company_policy",
+
+	]
+}
+
+var read_only_edit = {
+	issue_meter:["meter_serial_no","meter_size_or_type","meter_size_or_type",
+		"initial_reading","issue_date","meter_serial_no","meter_size_or_type",
+		"initial_reading","issue_date","issued_by","received_date","received_by"
+	],
+	make_new_connection:["deposit","new_connection_fee"],
+	all:["meter_serial_no","meter_size_or_type","meter_size_or_type",
+	"initial_reading","issue_date","meter_serial_no","meter_size_or_type",
+	"initial_reading","issue_date","issued_by","received_date","received_by",
+	"deposit","new_connection_fee"
 	]
 }
 
@@ -43,6 +71,13 @@ function hide_unhide_on_refresh(frm) {
 		hide_function(frm, field_to_hide_unhide, "none")
 	}
 
+	if(frm.doc.connection_with_company == "Connected"){
+		hide_function(frm, field_to_hide_unhide, "connected_with_company")
+	}
+	else if(frm.doc.connection_with_company == "Not Connected" ){
+		hide_function(frm, field_to_hide_unhide, "not_connected_with_company")
+	}
+
 	function hide_function(frm, field_to_hide_unhide, selected_option) {
 		var hide_fields = field_to_hide_unhide["all"]
 		var unhide_fields = field_to_hide_unhide[selected_option]
@@ -56,6 +91,31 @@ function hide_unhide_on_refresh(frm) {
 	}
 }
 
+// function that hides or unhides fields when a certain field is clicked
+function toogle_read_only(frm){
+	// make all fields read only
+	var all_fields = read_only_edit["all"]
+	for(var i = 0; i< all_fields.length;i++ ){
+		// toogle_fields(all_fields[i],false)
+		frm.set_df_property(all_fields[i],"read_only",1);
+	}
+
+	if(frm.doc.issue_meter == 1){
+		var fields_to_toggle = read_only_edit["issue_meter"]
+		for(var i = 0; i< fields_to_toggle.length;i++ ){
+			// toogle_fields(fields_to_toggle[i],true)
+			frm.set_df_property(fields_to_toggle[i],"read_only",0);
+		}
+	}	
+
+	if(frm.doc.make_new_connection == 1){
+		var fields_to_toggle = read_only_edit["make_new_connection"]
+		for(var i = 0; i< fields_to_toggle.length;i++ ){
+			// toogle_fields(fields_to_toggle[i],true)
+			frm.set_df_property(fields_to_toggle[i],"read_only",0);
+		}
+	}
+}
 
 
 /* end of the general functions section
@@ -68,28 +128,38 @@ reload to perform various action*/
 /*function that acts when the readings field under meter reading sheet is
 filled*/
 
+frappe.ui.form.on("Survey Data","onload", function(frm, cdt, cdn) { 
+    // var df = frappe.meta.get_docfield("Survey Data Item","Survey Data Items", cur_frm.doc.name);
+	// 	df.read_only = 1;
+});
 
 frappe.ui.form.on('Survey Data', {
 	refresh: function(frm) {
+		// hide unhide fields
 		hide_unhide_on_refresh(frm)
-
+		// enable or disable fields
+		toogle_read_only(frm)
 	}
 });
 
-//function that sets the customer name read_only on save
-// frappe.ui.form.on("Survey Data", "refresh", function(frm) { 
-// 	// use the __islocal value of doc, to check if the doc is saved or not 
-// 	frm.set_df_property("customer_name", "read_only", frm.doc.__islocal ? 0 : 1); 
-// });
-
-// function that returns to task on save 
-// frappe.ui.form.on("Survey Data", { after_save: function(frm){
-// 	console.log("returning")
-// 	frappe.set_route("Form", "Task","TASK-2018-00032")
-// }});
-
+// functionality triggered by clicking on the type of sanitation field
 frappe.ui.form.on("Survey Data", "type_of_sanitation", function (frm) {
-	console.log("clicked")
 	frm.refresh()
-
 })
+
+// functionality triggered by clicking on the issue meter button
+frappe.ui.form.on("Survey Data", "issue_meter", function (frm) {
+	frm.refresh()
+})
+
+
+// functionality triggered by clicking on the make new connection button
+frappe.ui.form.on("Survey Data", "make_new_connection", function (frm) {
+	frm.refresh()
+})
+
+// functionality triggered by clicking on the connection with company
+frappe.ui.form.on("Survey Data", "connection_with_company", function (frm) {
+	frm.refresh()
+})
+
