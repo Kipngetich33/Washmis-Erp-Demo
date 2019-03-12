@@ -8,7 +8,8 @@ from frappe.model.document import Document
 
 class MeterReadingCapture(Document):
 	'''
-	This is the Reading Sheet Controller  class
+	This is the Meter Reading Sheet Captur 
+	Controller  class
 	'''
 	sales_invoice_items_holder = []
 
@@ -163,7 +164,6 @@ def get_disconnection_profile(customer_type):
 	else:
 		fail_message = "No Disconnection Profile for Customer Type {}".format(customer_type)
 		frappe.throw(fail_message)
-
 
 def loop_through_tariffs(applicable_tarrifs,consumption):
 	list_of_tariffs = []

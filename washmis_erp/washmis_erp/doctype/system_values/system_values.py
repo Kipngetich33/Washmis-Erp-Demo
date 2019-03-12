@@ -31,7 +31,6 @@ def check_duplicate(self):
 	'''
 	Check for duplicate system values
 	'''
-
 	system_values_list = frappe.get_list("System Values",
 		fields=["name"],
 		filters = {

@@ -120,17 +120,7 @@ function toogle_read_only(frm){
 /* end of the general functions section
 // =================================================================================================
 /* This section  contains functions that are triggered by the form action refresh or
-reload to perform various action*/
-
-/* end of the form triggered functions section
-// =================================================================================================
-/*function that acts when the readings field under meter reading sheet is
-filled*/
-
-frappe.ui.form.on("Survey Data","onload", function(frm, cdt, cdn) { 
-    // var df = frappe.meta.get_docfield("Survey Data Item","Survey Data Items", cur_frm.doc.name);
-	// 	df.read_only = 1;
-});
+reload etc to perform various action*/
 
 frappe.ui.form.on('Survey Data', {
 	refresh: function(frm) {

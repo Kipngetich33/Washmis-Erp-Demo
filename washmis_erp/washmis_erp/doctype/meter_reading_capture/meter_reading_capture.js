@@ -102,9 +102,6 @@ function retrive_customer_details(current_reading_sheet){
 				alert_message("No customers exists for selected Route and biling period")
 			}
 			else if(response.message.length > 0){
-				console.log("there are customers existing")
-				console.log(response)
-
 				cur_frm.clear_table("meter_reading_sheet"); 
 				cur_frm.refresh_fields();
 				$.each(response.message || [], function(i, v){
