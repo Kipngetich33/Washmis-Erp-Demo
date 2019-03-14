@@ -27,7 +27,11 @@ class CommonTasks(Document):
 		# calculate the total time
 		calculate_total_turnaround(self)
 		
-		# frappe.throw("pause")
+		# check if the total turnaround field has been filled
+		if(self.total_time_to_finish_task):
+			pass
+		else:
+			frappe.throw("Value for the Total Turnaround Time Has not Been Given, Try Again")
 
 	def on_trash(self):
 		pass
@@ -66,9 +70,8 @@ def calculate_total_turnaround(self):
 	on the results on another tasks that takes 2 days then
 	the total turnaround time for the task is 3 days
 	'''
-	total_turnaround = 0 
+	total_turnaround = 0
 
-	print "*"*80
 	# get the total turnaround of the preceding tasks
 	if(len(self.if_yes_which_task_does_this_task_come_after) != 0):
 		# get the total turnaround of the preceding tasks
