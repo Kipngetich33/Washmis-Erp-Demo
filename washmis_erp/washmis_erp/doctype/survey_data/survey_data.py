@@ -18,6 +18,7 @@ class SurveyData(Document):
 		'''
 		pass
 
+
 	def on_update(self):
 		'''
 		Function that runs when the document is saved
@@ -29,6 +30,8 @@ class SurveyData(Document):
 
 		# add all the current details to the child table
 		create_survey_data_item(self)
+
+		# add checks to ensure that the fileds are filled correctly
 		
 	def on_trash(self):
 		pass
