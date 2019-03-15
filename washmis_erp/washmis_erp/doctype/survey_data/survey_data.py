@@ -29,6 +29,9 @@ class SurveyData(Document):
 
 		# add all the current details to the child table
 		create_survey_data_item(self)
+
+		# only on master
+
 		
 	def on_trash(self):
 		pass
