@@ -24,7 +24,7 @@ class SurveyData(Document):
 		Function that runs when the document is saved
 		'''
 		# add checks to ensure that the fileds are filled correctly
-		# check_fields(self)
+		check_fields(self)
 
 		# Uncheck the check fields
 		self.issue_meter = 0
@@ -88,5 +88,32 @@ def check_fields(self):
 	Function that checks all the required fields are
 	given
 	'''
-	print "*"*80
-	print self.issue_meter
+	# check required fields for issue meter
+	if(self.issue_meter):
+		# check issue meter fields
+		issue_meter_fields = [self.meter_serial_no,self.meter_size_or_type,self.initial_reading,
+		self.issue_date,self.issued_by,self.received_date,self.received_by
+		]
+
+		issue_meter_field_names = ["Meter Serial No","Meter Size or Type","Initial Reading",
+			"Issue Date","Issued By","Received Date","Received By"
+		]
+
+		fields_counter = 0
+		for field in issue_meter_fields:
+			if field  == None:
+				frappe.throw("In Order to Issue a Meter the {} Should Be Filled".format(issue_meter_field_names[fields_counter]))
+			# increase the counter
+			fields_counter += 1
+
+	# make new connection fields
+	if(self.make_new_connection):
+		make_connection_fields = [self.deposit,self.new_connection_fee]
+		make_connection_field_names = ["Deposit","New Connection Fee"]
+
+		fields_counter_conn = 0
+		for field in make_connection_fields:
+			if field  == None:
+				frappe.throw("In Order to Issue Make A Connection {} Should Be Filled".format(make_connection_field_names[fields_counter_conn]))
+			# increase the counter
+			fields_counter_conn += 1

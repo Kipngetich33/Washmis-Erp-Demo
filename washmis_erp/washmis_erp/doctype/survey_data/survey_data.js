@@ -34,9 +34,8 @@ var field_to_hide_unhide = {
 }
 
 var read_only_edit = {
-	issue_meter:["meter_serial_no","meter_size_or_type","meter_size_or_type",
-		"initial_reading","issue_date","meter_serial_no","meter_size_or_type",
-		"initial_reading","issue_date","issued_by","received_date","received_by"
+	issue_meter:["meter_serial_no","meter_size_or_type","initial_reading",
+		"issue_date","issued_by","received_date","received_by"
 	],
 	make_new_connection:["deposit","new_connection_fee"],
 	all:["meter_serial_no","meter_size_or_type","meter_size_or_type",
@@ -56,38 +55,41 @@ function hide_unhide_fields(frm, list_of_fields, hide_or_unhide) {
 
 // function that hides or unhides certain fields on refresh
 function hide_unhide_on_refresh(frm) {
-	console.log("On refresh")
+	var temporary_list = []
 	if (frm.doc.type_of_sanitation == "Sewered") {
-		hide_function(frm, field_to_hide_unhide, "sewered_fields")
+		var selected_fields = field_to_hide_unhide["sewered_fields"]
+		for(var i = 0; i < selected_fields.length;i++){
+			temporary_list.push(selected_fields[i])
+		}
+
 	}
 	else if (frm.doc.type_of_sanitation == "Onsite") {
-		hide_function(frm, field_to_hide_unhide, "onsite_fields")
+		var selected_fields = field_to_hide_unhide["onsite_fields"]
+		for(var i = 0; i < selected_fields.length;i++){
+			temporary_list.push(selected_fields[i])
+		}
 	}
 	else if (frm.doc.type_of_sanitation == "None") {
-		hide_function(frm, field_to_hide_unhide, "other")
-	}
-	else {
-		hide_function(frm, field_to_hide_unhide, "none")
+		var selected_fields = field_to_hide_unhide["other"]
+		for(var i = 0; i < selected_fields.length;i++){
+			temporary_list.push(selected_fields[i])
+		}
 	}
 
 	if(frm.doc.connection_with_company == "Connected"){
-		hide_function(frm, field_to_hide_unhide, "connected_with_company")
+		var selected_fields = field_to_hide_unhide["connected_with_company"]
+		for(var i = 0; i < selected_fields.length;i++){
+			temporary_list.push(selected_fields[i])
+		}
 	}
 	else if(frm.doc.connection_with_company == "Not Connected" ){
-		hide_function(frm, field_to_hide_unhide, "not_connected_with_company")
-	}
-
-	function hide_function(frm, field_to_hide_unhide, selected_option) {
-		var hide_fields = field_to_hide_unhide["all"]
-		var unhide_fields = field_to_hide_unhide[selected_option]
-		if (selected_option == "none") {
-			hide_unhide_fields(frm, hide_fields, false)
-		}
-		else {
-			hide_unhide_fields(frm, hide_fields, false)
-			hide_unhide_fields(frm, unhide_fields, true)
+		var selected_fields = field_to_hide_unhide["not_connected_with_company"]
+		for(var i = 0; i < selected_fields.length;i++){
+			temporary_list.push(selected_fields[i])
 		}
 	}
+	hide_unhide_fields(frm, field_to_hide_unhide["all"], false)
+	hide_unhide_fields(frm, temporary_list, true)
 }
 
 // function that hides or unhides fields when a certain field is clicked
@@ -116,7 +118,6 @@ function toogle_read_only(frm){
 	}
 }
 
-
 /* end of the general functions section
 // =================================================================================================
 /* This section  contains functions that are triggered by the form action refresh or
@@ -140,7 +141,6 @@ frappe.ui.form.on("Survey Data", "type_of_sanitation", function (frm) {
 frappe.ui.form.on("Survey Data", "issue_meter", function (frm) {
 	frm.refresh()
 })
-
 
 // functionality triggered by clicking on the make new connection button
 frappe.ui.form.on("Survey Data", "make_new_connection", function (frm) {
