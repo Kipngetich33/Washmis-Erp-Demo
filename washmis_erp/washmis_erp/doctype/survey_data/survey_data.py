@@ -23,6 +23,8 @@ class SurveyData(Document):
 		'''
 		Function that runs when the document is saved
 		'''
+		# add checks to ensure that the fileds are filled correctly
+		# check_fields(self)
 
 		# Uncheck the check fields
 		self.issue_meter = 0
@@ -31,7 +33,6 @@ class SurveyData(Document):
 		# add all the current details to the child table
 		create_survey_data_item(self)
 
-		# add checks to ensure that the fileds are filled correctly
 		
 	def on_trash(self):
 		pass
@@ -77,8 +78,15 @@ def create_survey_data_item(self):
 		"meter_state":self.meter_state
 	})
 
-	# print self.survey_data_items
 	for item in self.survey_data_items:
 		# save the current survey data item
 		if(item.survey_date == date_to_apply):
 			item.insert()
+
+def check_fields(self):
+	'''
+	Function that checks all the required fields are
+	given
+	'''
+	print "*"*80
+	print self.issue_meter
