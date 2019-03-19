@@ -23,6 +23,8 @@ class SurveyData(Document):
 		'''
 		Function that runs when the document is saved
 		'''
+		# set the current user to user field
+		self.user = frappe.session.user
 		# add checks to ensure that the fileds are filled correctly
 		check_fields(self)
 
@@ -32,8 +34,10 @@ class SurveyData(Document):
 
 		# add all the current details to the child table
 		create_survey_data_item(self)
-
 		
+		# add "Yes" to saved field
+		self.saved = "Yes"
+
 	def on_trash(self):
 		pass
 
@@ -75,7 +79,8 @@ def create_survey_data_item(self):
 		"no_other_connection_before":self.no_other_connection_before,
 		"there_is_an_appropriate_line_nearby":self.there_is_an_appropriate_line_nearby,
 		"the_meter_position_will_be_as_per_the_company_policy":self.the_meter_position_will_be_as_per_the_company_policy,
-		"meter_state":self.meter_state
+		"meter_state":self.meter_state,
+		"user":self.user
 	})
 
 	for item in self.survey_data_items:
@@ -88,6 +93,21 @@ def check_fields(self):
 	Function that checks all the required fields are
 	given
 	'''
+	if(self.saved != "Yes"):
+		# ensure there are no duplicate for customer
+		survey_data_list= frappe.get_list("Survey Data",
+			fields=["*"],
+			filters = {
+				"customer_name":self.customer_name
+		})
+
+		if(len(survey_data_list)>1):
+			# another survey data record exists
+			frappe.throw("Another Survey Data Record for Customer {} Already Exist".format(self.customer_name))
+			pass
+		else:
+			pass
+
 	# check required fields for issue meter
 	if(self.issue_meter):
 		# check issue meter fields
