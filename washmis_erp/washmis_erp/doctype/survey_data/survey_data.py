@@ -34,9 +34,10 @@ class SurveyData(Document):
 
 		# add all the current details to the child table
 		create_survey_data_item(self)
-		
-		# add "Yes" to saved field
-		self.saved = "Yes"
+
+		# define status to ensure status is pending if not connected
+		if(self.connection_with_company != "Connected"):
+			self.status = "Pending"
 
 	def on_trash(self):
 		pass
@@ -107,6 +108,9 @@ def check_fields(self):
 			pass
 		else:
 			pass
+
+		# add "Yes" to saved field
+		self.saved = "Yes"
 
 	# check required fields for issue meter
 	if(self.issue_meter):
