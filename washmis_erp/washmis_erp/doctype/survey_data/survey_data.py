@@ -18,10 +18,15 @@ class SurveyData(Document):
 		'''
 		pass
 
+
 	def on_update(self):
 		'''
 		Function that runs when the document is saved
 		'''
+		# set the current user to user field
+		self.user = frappe.session.user
+		# add checks to ensure that the fileds are filled correctly
+		check_fields(self)
 
 		# Uncheck the check fields
 		self.issue_meter = 0
@@ -30,9 +35,10 @@ class SurveyData(Document):
 		# add all the current details to the child table
 		create_survey_data_item(self)
 
-		# only on master
+		# define status to ensure status is pending if not connected
+		if(self.connection_with_company != "Connected"):
+			self.status = "Pending"
 
-		
 	def on_trash(self):
 		pass
 
@@ -74,11 +80,64 @@ def create_survey_data_item(self):
 		"no_other_connection_before":self.no_other_connection_before,
 		"there_is_an_appropriate_line_nearby":self.there_is_an_appropriate_line_nearby,
 		"the_meter_position_will_be_as_per_the_company_policy":self.the_meter_position_will_be_as_per_the_company_policy,
-		"meter_state":self.meter_state
+		"meter_state":self.meter_state,
+		"user":self.user
 	})
 
-	# print self.survey_data_items
 	for item in self.survey_data_items:
 		# save the current survey data item
 		if(item.survey_date == date_to_apply):
 			item.insert()
+
+def check_fields(self):
+	'''
+	Function that checks all the required fields are
+	given
+	'''
+	if(self.saved != "Yes"):
+		# ensure there are no duplicate for customer
+		survey_data_list= frappe.get_list("Survey Data",
+			fields=["*"],
+			filters = {
+				"customer_name":self.customer_name
+		})
+
+		if(len(survey_data_list)>1):
+			# another survey data record exists
+			frappe.throw("Another Survey Data Record for Customer {} Already Exist".format(self.customer_name))
+			pass
+		else:
+			pass
+
+		# add "Yes" to saved field
+		self.saved = "Yes"
+
+	# check required fields for issue meter
+	if(self.issue_meter):
+		# check issue meter fields
+		issue_meter_fields = [self.meter_serial_no,self.meter_size_or_type,self.initial_reading,
+		self.issue_date,self.issued_by,self.received_date,self.received_by
+		]
+
+		issue_meter_field_names = ["Meter Serial No","Meter Size or Type","Initial Reading",
+			"Issue Date","Issued By","Received Date","Received By"
+		]
+
+		fields_counter = 0
+		for field in issue_meter_fields:
+			if field  == None:
+				frappe.throw("In Order to Issue a Meter the {} Should Be Filled".format(issue_meter_field_names[fields_counter]))
+			# increase the counter
+			fields_counter += 1
+
+	# make new connection fields
+	if(self.make_new_connection):
+		make_connection_fields = [self.deposit,self.new_connection_fee]
+		make_connection_field_names = ["Deposit","New Connection Fee"]
+
+		fields_counter_conn = 0
+		for field in make_connection_fields:
+			if field  == None:
+				frappe.throw("In Order to Issue Make A Connection {} Should Be Filled".format(make_connection_field_names[fields_counter_conn]))
+			# increase the counter
+			fields_counter_conn += 1

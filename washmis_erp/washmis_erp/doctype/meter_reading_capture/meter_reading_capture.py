@@ -8,7 +8,7 @@ from frappe.model.document import Document
 
 class MeterReadingCapture(Document):
 	'''
-	This is the Meter Reading Sheet Captur 
+	This is the Meter Reading Sheet Capture
 	Controller  class
 	'''
 	sales_invoice_items_holder = []
@@ -102,7 +102,7 @@ def create_new_sales_invoice(list_of_sales_invoice_details):
 
 		# get applicable items
 		applicable_tarrifs = get_applicable_tariff(list_item["type_of_customer"],"Tariff",list_item["consumption"])
-		applicable_rent = get_applicable_rent(list_item["type_of_customer"],"Meter")
+		applicable_rent = get_applicable_rent(list_item["type_of_customer"],"Meter Rent")
 		
 		# loop throught applicable tarrifs
 		items_and_quantities = loop_through_tariffs(applicable_tarrifs,list_item["consumption"])
