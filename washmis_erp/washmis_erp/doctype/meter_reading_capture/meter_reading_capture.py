@@ -15,7 +15,7 @@ class MeterReadingCapture(Document):
 
 	def validate(self):
 		'''
-		checks:
+		checks
 		'''
 		pass
 
@@ -29,8 +29,6 @@ class MeterReadingCapture(Document):
 	
 		# create sales invoices
 		create_new_sales_invoice(sales_invoice_items_list)
-		
-
 
 	def on_trash(self):
 		pass
@@ -67,12 +65,15 @@ class MeterReadingCapture(Document):
 			sales_invoice_details["type_of_bill"] = "Actual"
 
 			# get the disconnection profile for current customer
-			customer_type =  meter_reading.type_of_customer
-			current_disconnection_profile = get_disconnection_profile(customer_type)
+			found_customer_group =  meter_reading.type_of_customer
+			current_disconnection_profile = get_disconnection_profile(found_customer_group)
 
 			sales_invoice_details["disconnection_profile"] = current_disconnection_profile
-			sales_invoice_details["type_of_customer"] = customer_type
+			sales_invoice_details["type_of_customer"] = found_customer_group
+			sales_invoice_details["customer_type"] = meter_reading.customer_type
 			sales_invoice_details["type_of_invoice"] = "Bill"
+			sales_invoice_details["reading_code"] = meter_reading.reading_code
+
 
 			# append the dictionary to sales_invoice_items_holder
 			sales_invoice_items_holder.append(sales_invoice_details)
@@ -98,7 +99,32 @@ def create_new_sales_invoice(list_of_sales_invoice_details):
 		doc.type_of_bill = list_item["type_of_bill"]
 		doc.disconnection_profile = list_item["disconnection_profile"]["disconnection_name"]
 		doc.type_of_customer = list_item["type_of_customer"]
+		doc.customer_type = list_item["customer_type"]
 		doc.type_of_invoice = list_item["type_of_invoice"]
+
+		# check reading code
+		if(list_item["customer_type"] == "Flat"):
+			# its reading code should always be normal
+			if(list_item["reading_code"] == "Normal Reading"):
+				# set consumption to None and instead set estimated consumption
+				doc.estimated_consumption = list_item["consumption"]
+				doc.consumption = None
+			else:
+				frappe.throw("Customer {} is a Flat Rate Customer hence the Reading Code Should be Normal".format(list_item["customer"]))
+		elif(list_item["customer_type"] == "Metered"):
+			# just take the consumption but check for meter status
+			if(list_item["reading_code"] == "Normal Reading"):
+				pass
+
+			elif(list_item["reading_code"] == "Meter Stuck"):
+				# set consumption to None and instead set estimated consumption 
+				doc.estimated_consumption = list_item["consumption"]
+				doc.consumption = None	
+			else:
+				frappe.throw("An Error Occured with the Reading Code")
+		else:
+			frappe.throw("An Error Occured With Customer Type")
+		
 
 		# get applicable items
 		applicable_tarrifs = get_applicable_tariff(list_item["type_of_customer"],"Tariff",list_item["consumption"])
@@ -114,20 +140,27 @@ def create_new_sales_invoice(list_of_sales_invoice_details):
 				'description': "Monthly Bill",
 				'uom':'Nos',
 				'conversion_factor': 1.0,
-				'income_account': 'Sales - UL',
-				'cost_center': 'Main - UL'
+				'income_account': 'Sales - VW',
+				'cost_center': 'Main - VW'
 			})
 		# add applicable meter rent
-		name_of_rent_item = applicable_rent[0][0]
-		doc.append("items",{
-				"item_code": name_of_rent_item,
-				"qty": 1,
-				'description': "Monthly Bill",
-				'uom':'Nos',
-				'conversion_factor': 1.0,
-				'income_account': 'Sales - UL',
-				'cost_center': 'Main - UL'
-		})
+		if(list_item["customer_type"] == "Flat"):
+			# no meter rent applies hence pass
+			pass
+		elif(list_item["customer_type"] == "Metered"):
+			name_of_rent_item = applicable_rent[0][0]
+			doc.append("items",{
+					"item_code": name_of_rent_item,
+					"qty": 1,
+					'description': "Monthly Bill",
+					'uom':'Nos',
+					'conversion_factor': 1.0,
+					'income_account': 'Sales - VW',
+					'cost_center': 'Main - VW'
+			})
+		else:
+			frappe.throw("Something Went Wrong While Determining Applicable Meter Rent")
+
 		# check if the sales invoice already exist
 		check_if_sales_invoice_exist(list_item["customer"],list_item["billing_period"])
 		# save the invoice
@@ -263,3 +296,5 @@ def check_if_sales_invoice_exist(customer_name,billing_period):
 	else:
 		fail_message = "A Sales invoice for {} for customer {} Already Exist".format(billing_period,customer_name)
 		frappe.throw(fail_message)
+	
+	

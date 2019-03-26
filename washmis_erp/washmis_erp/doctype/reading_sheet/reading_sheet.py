@@ -11,6 +11,8 @@ from calendar import monthrange
 import frappe
 from frappe.model.document import Document
 
+# global variables
+flat_rate_consumption = 12
 
 class ReadingSheet(Document):
 	'''
@@ -58,9 +60,10 @@ class ReadingSheet(Document):
 		self.run_functions2(self.validate_customer_details_exists)
 		#validate readings
 		self.run_functions2(self.validate_readings)
+		# determine correct readings based on customer type
+		# now check the logical validity of readings and update those that don't match
+		self.run_functions2(self.readings_based_on_customer_type)
 		# validate system values for route or create one if none exists
-
-		# sytem_values_exist = self.validate_system_values_for_route()
 		sytem_values_exist = self.get_last_system_values_of_route2()
 		if(sytem_values_exist["status"]):
 			pass
@@ -78,12 +81,10 @@ class ReadingSheet(Document):
 			comparison_results = self.compare_period_ranks(current_billing_period,last_saved_period)
 			if(comparison_results["status"]== False):
 				frappe.throw(comparison_results["message"])
-			
+
 			# save current reading and update system values
 			save_current_readings(self.meter_reading_sheet)
 			update_system_values_for_route(self)
-
-		# frappe.throw("pause")
 		
 	def on_update(self):
 		pass
@@ -145,7 +146,13 @@ class ReadingSheet(Document):
 					message = "Manual consumption for Customer {} Does Not Exist".\
 					format(row_to_check.customer_name)
 					return {"status":False,"message":message}
-			
+
+				# check that reading code is given
+				elif(row_to_check.reading_code == None):
+					message = "Reading Code for Customer {} Does Not Exist".\
+					format(row_to_check.customer_name)
+					return {"status":False,"message":message}
+
 			return {"status":True}
 		else:
 			return {"status":False,"message":"There Are No Active Customers Marching Route,Billing Period"}
@@ -155,6 +162,7 @@ class ReadingSheet(Document):
 		Function that checks to ensure that readings 
 		dont contain obvious error eg. negatives
 		'''
+		
 		if(self.meter_reading_sheet):
 			for i in range(len(self.meter_reading_sheet)):
 				row_to_check = self.meter_reading_sheet[i]
@@ -302,6 +310,106 @@ class ReadingSheet(Document):
 		# get the correct end date based on the given month and year
 		correct_end_date = monthrange(int(start_date[0:4]),int(start_date[5:7]))[1]
 
+	def readings_based_on_customer_type(self):
+		'''
+		Function that checks if the given readings are correct based on the 
+		given customer type and reading code
+		'''
+		for i in self.meter_reading_sheet:
+			row_to_check = i
+
+			if(row_to_check.customer_type == "Flat"):
+				# its reading code should always be normal
+				if(row_to_check.reading_code == "Normal Reading"):
+					# ensure that previous reading and reading are equal
+					if(int(row_to_check.previous_manual_reading) == int(row_to_check.current_manual_readings)):
+						pass
+					else:
+						message_to_return = "For Customer {} of Type 'Flat' Previous and Current Readings Should be Equal".format(row_to_check.customer_name)
+						return {"status":False,"message":message_to_return}
+					
+					# ensure consumption is equivalent to flat rate
+					if(int(row_to_check.manual_consumption) == 0):
+						# set the correct manual_consumption value
+						row_to_check.manual_consumption = flat_rate_consumption
+					elif(int(row_to_check.manual_consumption) >0):
+						if(int(row_to_check.manual_consumption) == flat_rate_consumption):
+							pass
+						else:
+							message_to_return = "Consumption for Customer {} of Type Flat the Consumption Should be Equal to the Flat Rate Value of {}".format(row_to_check.customer_name,flat_rate_consumption)
+							return {"status":False,"message":message_to_return}
+				else:
+					message_to_return = "Customer {} is a Flat Rate Customer hence the Reading Code Should be Normal".format(row_to_check.customer_name)
+					return {"status":False,"message":message_to_return}
+
+			elif(row_to_check.customer_type == "Metered"):
+				# check  readings to ensure that the values are logically right
+				if(row_to_check.reading_code == "Normal Reading"):
+					pass
+				elif(row_to_check.reading_code == "Meter Stuck"):
+					# ensure previous readings are curent readings are equal
+					if(int(row_to_check.previous_manual_reading) == int(row_to_check.current_manual_readings)):
+						pass
+					else:
+						message_to_return = "For Customer {} Whose Meter is Stuck, Previous and Current Readings Should be Equal".format(row_to_check.customer_name)
+						return {"status":False,"message":message_to_return}
+
+					# ensure consumption is zero
+					if(int(row_to_check.manual_consumption) == 0):
+						pass
+					else:
+						if(int(row_to_check.manual_consumption)== flat_rate_consumption):
+							pass
+						else:
+							message_to_return = "Consumption for Customer {} Whose Meter Stuck Should Have a Consumption of 0 or Flat Rate value".format(row_to_check.customer_name)
+							return {"status":False,"message":message_to_return}
+
+					# get avarage of the last three months and set it as the new consumption
+					avarage_consumption = self.calculate_3months_avarage(row_to_check.customer_name,row_to_check.billing_period)
+					row_to_check.manual_consumption = avarage_consumption
+				else:
+					return {"status":False,"message":"An Error Occured with the Reading Code"}
+			else:
+				return {"status":False,"message":"An Error Occured while Determining Customer Type"}
+
+		# if everything is done return true
+		return {"status":True}
+
+
+	def calculate_3months_avarage(self,customer_name,billing_period):
+		'''
+		Function that uses the customer name and billing period 
+		get the customer's reading for the last three billing perids
+		'''
+		# get the endate of the given billing_period
+		end_date = ''
+		found_lists = frappe.get_list("Billing Period",
+			fields=["end_date_of_billing_period"],
+			filters = {
+				"name":billing_period
+		})
+		if(len(found_lists)== 0):
+			frappe.throw("There is No Such Billing Period {}".format(billing_period))
+		else:
+			end_date = found_lists[0].end_date_of_billing_period
+			end_date =  str(end_date)
+				
+		three_previous_periods = frappe.db.sql("""SELECT name from `tabBilling Period` WHERE end_date_of_billing_period < '{}' ORDER BY end_date_of_billing_period DESC LIMIT 3""".format(end_date))
+	
+		previous_reading_for_avaraging = []
+
+		for period in three_previous_periods:
+			reading_for_period = frappe.db.sql("""SELECT name,manual_consumption from `tabMeter Reading Sheet` WHERE parenttype="Reading Sheet" and customer_name = '{}' and billing_period = '{}'""".format(customer_name,period[0]))
+			if(len(reading_for_period)==0):
+				pass
+			else:
+				previous_reading_for_avaraging.append(int(reading_for_period[0][1]))
+
+		if(len(previous_reading_for_avaraging)==0):
+			# no previous readings exists hence use the flat_rate_consumption
+			previous_reading_for_avaraging.append(flat_rate_consumption)
+
+		return sum(previous_reading_for_avaraging)/len(previous_reading_for_avaraging)
 
 # ================================================================================
 # the section below is the general functions section
@@ -320,7 +428,6 @@ def save_current_readings(current_meter_reading_sheet):
 		for i in range(len(current_meter_reading_sheet)):
 			current_row = current_meter_reading_sheet[i]
 			save_each_customer_readings(current_row)
-
 
 def save_each_customer_readings(current_row):
 	'''

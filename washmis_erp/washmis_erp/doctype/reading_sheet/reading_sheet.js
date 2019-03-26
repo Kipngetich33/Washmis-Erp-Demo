@@ -5,6 +5,8 @@
 /* This section contains code from the general functions section
 which are called is the form triggered functions section*/
 
+// global variables
+var flat_rate_consumption = 12
 
 /* function thatexports as excel sheet button is clicked*/
 frappe.ui.form.on("Reading Sheet", "export_file", function(frm) {
@@ -112,16 +114,25 @@ function get_customer_with_no(system_no){
 			newrow.reading_date=cur_frm.doc.reading_date
 			newrow.tel_no=response.message.tel_no
 			newrow.balance_bf=response.message.outstanding_balances
-			newrow.type_of_customer = response.message.customer_type
+			newrow.type_of_customer = response.message.customer_group
+			newrow.customer_type = response.message.customer_type
 			newrow.bill_category="Periodical"
 			newrow.type_of_bill="Actual"
-			newrow.reading_code="Normal Reading"
 			newrow.comments="Normal"
 			newrow.reading_sheet_no = cur_frm.doc.tracker_number
 			newrow.billing_period=cur_frm.doc.billing_period
 			newrow.route=cur_frm.doc.route
 			newrow.meter_reader=cur_frm.doc.meter_reader
 			newrow.previous_manual_reading=response.message.previous_reading
+
+			// check if customer type is flat
+			if(response.message.customer_type == "Flat"){
+				// set consumption to flat_rate_consumption and current reading be the same as previous readings
+				newrow.current_manual_readings = parseInt(response.message.previous_reading)
+				newrow.manual_consumption = flat_rate_consumption
+				// if a customer is of type flat then the reading should always be normal
+				newrow.reading_code = "Normal Reading"
+			}
 		}
 	})
 }
