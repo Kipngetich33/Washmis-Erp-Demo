@@ -119,6 +119,7 @@ function retrive_customer_details(current_reading_sheet){
 					newrow.reading_date=v.reading_date
 					newrow.tel_no=v.tel_no
 					newrow.type_of_customer = v.type_of_customer
+					newrow.customer_type = v.customer_type
 					newrow.bill_category= v.bill_category
 					newrow.type_of_bill= v.type_of_bill
 					newrow.reading_code=v.reading_code
