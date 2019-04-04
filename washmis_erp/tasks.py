@@ -5,6 +5,7 @@ import pandas
 import json
 import numpy
 import calendar
+import datetime
 
 import sys
 
@@ -149,3 +150,80 @@ def automatic_meter_reading_demo():
 				frappe.db.commit()
 			except Exception as err:
 				return err
+
+
+def send_bill():
+	'''
+	Function that retrives new invoices and 
+	sends an sms to the respective customers
+	'''
+	# get all unsent messages
+	list_of_unsent = applicable_meter_rent = frappe.db.sql("""SELECT name,customer, \
+		type_of_invoice,bill_amount,total_outstanding_amount from `tabSales Invoice` \
+		WHERE sms_sent = 'No' and status ='Unpaid' or status = 'Overdue' """)
+	
+	# loop through the list of customers
+	recipients_and_messages = []
+	for unsent in list_of_unsent:
+		sales_invoice = unsent[0]
+		customer_name = unsent[1]
+		type_of_invoice = unsent[2]
+		bill_amount = unsent[3]
+		total_outstanding_amount = unsent[4]
+		
+		'''
+		# construct message
+		print "inside the ofr"
+		message_to_send = "You have a new Invoice ({}) of {} ,your new outstanding balance is therefore {}"\
+			.format(type_of_invoice,bill_amount,total_outstanding_amount)
+		
+		# get customer number
+		# customer_number = frappe.db.sql("""SELECT name,tel_no \
+		# 	from `tabCustomer` WHERE name = '{}'""".format(customer_name))
+		
+		# set the status of the sales invoice to sent
+		sale_invoice_doc = frappe.get_doc('Sales Invoice',sales_invoice)
+		sale_invoice_doc.cancel()
+		# sale_invoice_doc.sms_sent = "Yes"
+		sale_invoice_doc.save()
+
+		# customer = frappe.get_doc('Customer', self.name)
+		# doc = frappe.get_doc("Customer System Number","*")
+		# 	doc.customer_number = doc.customer_number + 1
+		# 	doc.save()
+
+		# return frappe.db.sql("""SELECT * from `tabCustomer`""")
+		'''
+
+		# set system values for time smses were sent
+		# check if system value exists
+		list_of_values = frappe.get_list("System Values",
+			fields=["*"],
+			filters = {
+				"target_document":"Sales Invoice",
+				"target_record":"Bill"
+		})
+
+		if len(list_of_values) == 0:
+			print "None Exist"
+			new_system_value = frappe.get_doc({"doctype":"System Values"})
+			new_system_value.target_document = "Sales Invoice"
+			new_system_value.target_record = "Bill"
+			new_system_value.description = "03/04/2019"
+			new_system_value.insert()
+
+			sales_value = frappe.get_doc({
+				"doctype":"System Values",
+				"target_document":"Sales Invoice",
+				"target_record":"Bill"
+			})
+			sales_value.insert()
+
+		elif len(list_of_values) == 1:
+			frappe.throw("Exist")
+		else:
+			frappe.throw("An Error Occured Creating System Values for Sales Invoices")
+
+
+		
+		
