@@ -14,6 +14,10 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO
 
+import requests
+import pymysql.cursors
+import json
+
 def create_billing_period():
 	#first day of the month 
 	first_day_of_the_month = datetime.datetime.today().date().replace(day=1)
@@ -226,4 +230,42 @@ def send_bill():
 
 
 		
+def send_valve_closing_command():
+	'''
+	Function that sends commnads to close meter
+	valve
+	'''
+	print "*"*80
+	# get all overdue sales invoices based on due datetime
+	connection = pymysql.connect(
+            host='localhost',
+            user='root',
+            password='Empharse333',
+            db='2f9071bd4f19be4c',
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+    )
+	
+	try:
+		with connection.cursor() as cursor: 
+            # construct the sql syntax
+			sql = "SELECT * FROM `tabSales Invoice`"
+            # commit the changes
+			results = cursor.execute(sql)
+			unpaid_invoices = results.fetchall()
+			print type(unpaid_invoices)
 		
+        # save changes to database
+		connection.commit()
+	finally:
+		connection.close()
+
+
+def send_valve_opening_command():
+	'''
+	Function that sennds a command to open meter 
+	valve
+	'''
+	print "*"*80
+	print "sending valve closing command"
+

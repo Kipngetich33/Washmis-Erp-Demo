@@ -111,7 +111,7 @@ app_license = "MIT"
 scheduler_events = {
 	"all": [
 # 			"washmis_erp.tasks.all"
-			# "washmis_erp.tasks.test_task"
+			"washmis_erp.tasks.send_valve_closing_command"
 	],
 	"daily": [
 # 		"washmis_erp.tasks.daily"
