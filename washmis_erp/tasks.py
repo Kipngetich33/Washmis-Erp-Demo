@@ -17,6 +17,15 @@ else:
 import requests
 import pymysql.cursors
 import json
+import binascii
+
+import js2py
+
+from Naked.toolshed.shell import execute_js, muterun_js
+from naked import Sending_Signals
+
+# global variable
+grace_period = 60
 
 def create_billing_period():
 	#first day of the month 
@@ -236,6 +245,7 @@ def send_valve_closing_command():
 	valve
 	'''
 	print "*"*80
+	print "Checking for Disconnections"
 	# get all overdue sales invoices based on due datetime
 	connection = pymysql.connect(
             host='localhost',
@@ -248,24 +258,131 @@ def send_valve_closing_command():
 	
 	try:
 		with connection.cursor() as cursor: 
+			# get all customers with unpaid sales invoices
             # construct the sql syntax
-			sql = "SELECT * FROM `tabSales Invoice`"
+			sql = "SELECT customer,name,posting_time,posting_date FROM `tabSales Invoice` WHERE status = 'unpaid'"
             # commit the changes
-			results = cursor.execute(sql)
-			unpaid_invoices = results.fetchall()
-			print type(unpaid_invoices)
-		
+			cursor.execute(sql)
+			unpaid_invoices = cursor.fetchall()
+
+			print "unpaid invoice"
+			print unpaid_invoices
+			for unpaid in unpaid_invoices:
+				posting_date = unpaid["posting_date"]
+				time_now = datetime.datetime.now()
+			
+				posting_time = unpaid["posting_time"]
+				# current time
+				
+				current_date_with_time = datetime.datetime(
+					year=posting_date.year, 
+					month=posting_date.month,
+					day=posting_date.day,
+				)
+
+				current_datetime = current_date_with_time + posting_time
+				time_difference = time_now - current_datetime
+
+				if time_difference.total_seconds() > grace_period:
+					# check if the customer is connected or disconnected
+					# construct the sql syntax
+					sql = "SELECT meter_serial_no,connection_with_company,closing_command FROM `tabSurvey Data` WHERE customer_name = '{}'".format(unpaid["customer"])
+					# commit the changes
+					cursor.execute(sql)
+					list_of_serial_no = cursor.fetchall()
+					
+					# get survey data linked to customer
+					meter_serial_no = list_of_serial_no[0]["meter_serial_no"]
+					
+					# check if meter is connected
+					if list_of_serial_no[0]["connection_with_company"] == "Not Connected":
+						# the meter is already disconencted hence pass
+						pass
+					else:
+						# meter is currently hence send disonnection message
+						print "send disconnection message here"
+						# this is where we call the send message function and provide it
+						# with message, device_address 
+						send_message_function(list_of_serial_no[0]['closing_command'],meter_serial_no)
+
+						#change the meter status to disconnected
+						survey_sql = "UPDATE `tabSurvey Data` SET connection_with_company = 'Not Connected' WHERE customer_name ='{}'".format(unpaid["customer"])
+						cursor.execute(survey_sql)
+
         # save changes to database
 		connection.commit()
 	finally:
 		connection.close()
 
-
 def send_valve_opening_command():
 	'''
-	Function that sennds a command to open meter 
-	valve
+	Function that gets all customers whose valves are closed
+	and opens them if the customer has made necessary payment
 	'''
-	print "*"*80
-	print "sending valve closing command"
+	print "inside opening valve"
+	# get all overdue sales invoices based on due datetime
+	connection = pymysql.connect(
+            host='localhost',
+            user='root',
+            password='Empharse333',
+            db='2f9071bd4f19be4c',
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+    )
+
+	try:
+		with connection.cursor() as cursor: 
+			print "inside with"
+			# get all disconnected customers
+            # construct the sql syntax
+			sql = "SELECT customer_name,opening_command,meter_serial_no FROM `tabSurvey Data` WHERE connection_with_company = 'Not Connected'"
+            # commit the changes
+			cursor.execute(sql)
+			disconencted_customers = cursor.fetchall()
+			for disconnected_customer in disconencted_customers:
+				print "for loop"
+				# check if the have any unpaid invoices
+				sql = "SELECT customer FROM `tabSales Invoice` WHERE customer_name = '{}' and status = 'Unpaid'".format(disconnected_customer["customer_name"])
+				cursor.execute(sql)
+				list_of_unpaid = cursor.fetchall()
+
+				if len(list_of_unpaid) >0:
+					# do not reopen the valve since the customer has not paid
+					print "less than 0"
+					pass
+				elif len(list_of_unpaid) == 0:
+					print "more than zero"
+					# the customer has cleared all the bills hence open valve
+					# send the opening valve signal here
+					send_message_function(disconnected_customer["opening_command"],disconnected_customer["meter_serial_no"])
+
+					#change the meter status to Connected in survey data
+					survey_sql = "UPDATE `tabSurvey Data` SET connection_with_company = 'Connected' WHERE customer_name ='{}'".format(disconnected_customer["customer_name"])
+					cursor.execute(survey_sql)
+
+					# save changes to database
+					connection.commit()
+	finally:
+		connection.close()
+
+
+def get_meter_details():
+	'''
+	Function that get the meter details 
+	using a given customer
+	'''
+	# construct the sql syntax
+	sql = "SELECT * FROM `tabCustomer` WHERE status = 'unpaid'"
+	# commit the changes
+	cursor.execute(sql)
+	unpaid_invoices = cursor.fetchall()
+	print unpaid_invoices
+
+def send_message_function(message,device_address):
+	print message
+	print device_address
+	message_instance = Sending_Signals(message,device_address,"naked.js","naked.js")
+	message_instance.main()
+
+
 
