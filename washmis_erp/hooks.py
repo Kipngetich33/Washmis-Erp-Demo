@@ -97,25 +97,34 @@ app_license = "MIT"
 # 			avoid breaking code
 # 			"washmis_erp.tasks.automatic_meter_reading_demo"
 # 			'''
+# 			# "washmis_erp.tasks.send_valve_closing_command"
+# 			# "washmis_erp.tasks.send_valve_opening_command"
+
 # 			],
 # 		"0 0 1 * *": [ #every first day of the month at midnight
 # 		],
-# 		"* * * * *": [ 
-# 			#runs every minute
-# 			"washmis_erp.tasks.test_task"
-# 		]
+		
 
 # 	}
 # }
 
+
+
 scheduler_events = {
 	"all": [
-# 			"washmis_erp.tasks.all"
-			# "washmis_erp.tasks.test_task"
+			# "washmis_erp.tasks.all"
+			# "washmis_erp.tasks.send_valve_closing_command"
+			# "washmis_erp.tasks.send_valve_opening_command"
 	],
 	"daily": [
 # 		"washmis_erp.tasks.daily"
 	],
+	"cron": {
+        "* * * * *": [
+            "washmis_erp.tasks.send_valve_closing_command",
+			"washmis_erp.tasks.send_valve_opening_command"
+        ],
+    },
 	"hourly": [
 # 		"washmis_erp.tasks.hourly"
 	],
@@ -126,6 +135,8 @@ scheduler_events = {
 # # 		"washmis_erp.tasks.monthly"
 # 	]
 }
+
+
 
 # Testing
 # -------

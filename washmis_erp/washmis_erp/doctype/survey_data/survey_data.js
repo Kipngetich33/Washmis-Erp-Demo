@@ -151,4 +151,3 @@ frappe.ui.form.on("Survey Data", "make_new_connection", function (frm) {
 frappe.ui.form.on("Survey Data", "connection_with_company", function (frm) {
 	frm.refresh()
 })
-
