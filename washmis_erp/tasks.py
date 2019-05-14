@@ -19,8 +19,6 @@ import pymysql.cursors
 import json
 import binascii
 
-import js2py
-
 from Naked.toolshed.shell import execute_js, muterun_js
 from naked import Sending_Signals
 
