@@ -140,8 +140,8 @@ def create_new_sales_invoice(list_of_sales_invoice_details):
 				'description': "Monthly Bill",
 				'uom':'Nos',
 				'conversion_factor': 1.0,
-				'income_account': 'Sales - VW',
-				'cost_center': 'Main - VW'
+				'income_account': 'Sales - UL',
+				'cost_center': 'Main - UL'
 			})
 		# add applicable meter rent
 		if(list_item["customer_type"] == "Flat"):
@@ -155,8 +155,8 @@ def create_new_sales_invoice(list_of_sales_invoice_details):
 					'description': "Monthly Bill",
 					'uom':'Nos',
 					'conversion_factor': 1.0,
-					'income_account': 'Sales - VW',
-					'cost_center': 'Main - VW'
+					'income_account': 'Sales - UL',
+					'cost_center': 'Main - UL'
 			})
 		else:
 			frappe.throw("Something Went Wrong While Determining Applicable Meter Rent")
