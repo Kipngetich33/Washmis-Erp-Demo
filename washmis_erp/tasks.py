@@ -248,7 +248,7 @@ def send_valve_closing_command():
 	connection = pymysql.connect(
             host='localhost',
             user='root',
-            password='Empharse333',
+            password='washmis_erp',
             db='76cf18db07302d32',
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
@@ -321,7 +321,7 @@ def send_valve_opening_command():
 	connection = pymysql.connect(
             host='localhost',
             user='root',
-            password='Empharse333',
+            password='washmis_erp',
             db='76cf18db07302d32',
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
